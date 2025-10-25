@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Diagnostic Report - PiggyBankPC{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Performance Score Banner -->
+    <div class="card bg-primary text-white mb-4 shadow-lg">
+        <div class="card-body text-center py-5">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-tachometer-alt"></i> Your Benchmark Results
+            </h1>
+            <div class="row">
+                <div class="col-md-4">
+                    <h2 class="display-3 fw-bold">{{ submission.fps_avg|round(1) }}</h2>
+                    <p class="lead">Average FPS</p>
+                </div>
+                <div class="col-md-4">
+                    <h2 class="display-3 fw-bold">#{{ rank }}</h2>
+                    <p class="lead">of {{ total_submissions }} submissions</p>
+                </div>
+                <div class="col-md-4">
+                    {% if submission.price_per_fps %}
+                    <h2 class="display-3 fw-bold">£{{ submission.price_per_fps }}</h2>
+                    <p class="lead">per FPS</p>
+                    {% else %}
+                    <h2 class="display-3 fw-bold">N/A</h2>
+                    <p class="lead">Price/FPS</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hardware Info -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h4 class="mb-0"><i class="fas fa-microchip"></i> Your Hardware</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>CPU:</strong><br>
+                    {{ submission.cpu_model }}
+                </div>
+                <div class="col-md-4">
+                    <strong>GPU:</strong><br>
+                    {{ submission.gpu_model }} (£{{ submission.gpu_price }})
+                </div>
+                <div class="col-md-4">
+                    <strong>RAM:</strong><br>
+                    {{ submission.ram_total }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Improvement Celebration (if applicable) -->
+    {% if improvement %}
+    <div class="alert alert-success shadow-lg mb-4" style="border-left: 5px solid #28a745;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3 class="mb-2">🎉 IMPROVEMENT DETECTED!</h3>
+                <p class="lead mb-0">
+                    You gained <strong>{{ improvement.fps_gain|round(1) }} FPS</strong>
+                    (+{{ improvement.fps_gain_percent|round(1) }}%) since your last submission!
+                </p>
+                {% if improvement.fixes_applied %}
+                <p class="mt-2 mb-0">
+                    <strong>Fixes Applied:</strong>
+                    {% for fix in improvement.fixes_applied %}
+                    <span class="badge bg-success">{{ fix }}</span>
+                    {% endfor %}
+                </p>
+                {% endif %}
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="display-1">🏆</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Issues Detected Section -->
+    {% if issues %}
+    <div class="mb-4">
+        <h2 class="mb-4">
+            <i class="fas fa-exclamation-triangle text-warning"></i>
+            Issues Detected ({{ issues|length }})
+        </h2>
+        <p class="lead text-muted mb-4">
+            Good news! We found some easy fixes that could boost your performance!
+        </p>
+
+        {% for issue in issues %}
+        <div class="card mb-4 shadow-sm border-{{ 'danger' if issue.severity == 'high' else 'warning' if issue.severity == 'medium' else 'info' }}">
+            <div class="card-header bg-{{ 'danger' if issue.severity == 'high' else 'warning' if issue.severity == 'medium' else 'info' }} text-white">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-0">{{ issue.title }}</h4>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <span class="badge bg-light text-dark">{{ issue.severity|upper }} PRIORITY</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+
+                <!-- Issue Description -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <h5>What's Wrong?</h5>
+                        <p class="lead">{{ issue.description }}</p>
+                        <p><strong>Impact:</strong> {{ issue.impact }}</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="alert alert-success text-center">
+                            <h5 class="mb-2">⚡ Potential Gain</h5>
+                            <div class="display-6 fw-bold">{{ issue.potential_fps_gain }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fix Details -->
+                <div class="alert alert-light mb-4">
+                    <h5><i class="fas fa-wrench"></i> The Fix:</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>Difficulty:</strong>
+                            <span class="badge bg-primary">{{ issue.fix_difficulty }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Time Required:</strong> {{ issue.fix_time }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Cost:</strong> {{ issue.fix_cost }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YouTube Video CTA -->
+                {% if issue.youtube_video_id %}
+                <div class="card mb-4 bg-dark text-white">
+                    <div class="card-body text-center py-4">
+                        <h4 class="mb-3">
+                            <i class="fab fa-youtube text-danger"></i>
+                            Watch the Tutorial
+                        </h4>
+                        <p class="lead mb-4">{{ issue.youtube_title }}</p>
+                        <a href="https://youtube.com/watch?v={{ issue.youtube_video_id }}"
+                           target="_blank"
+                           class="btn btn-danger btn-lg px-5"
+                           onclick="trackVideoClick('{{ issue.issue_type }}', '{{ issue.youtube_video_id }}')">
+                            <i class="fab fa-youtube"></i> Watch Now - Learn in 10 Minutes!
+                        </a>
+                        <p class="text-muted mt-3 mb-0">
+                            <small>Step-by-step guide • Easy to follow • Used by 1000s</small>
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Product Recommendations -->
+                {% if issue.products %}
+                <div class="products-section">
+                    <h5 class="mb-3">
+                        <i class="fas fa-shopping-cart"></i>
+                        Recommended Products
+                    </h5>
+                    <div class="row">
+                        {% for product in issue.products %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card h-100 shadow-sm">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-8">
+                                            <h6 class="card-title">{{ product.name }}</h6>
+                                            <p class="card-text small text-muted">
+                                                {{ product.why_recommend }}
+                                            </p>
+                                            <div class="mb-2">
+                                                <span class="h4 text-success fw-bold">
+                                                    {{ product.currency }}{{ product.price }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <i class="fas fa-box fa-3x text-muted mb-2"></i>
+                                        </div>
+                                    </div>
+                                    <a href="{{ product.affiliate_link }}"
+                                       target="_blank"
+                                       class="btn btn-success btn-sm w-100"
+                                       onclick="trackAffiliateClick('{{ product.name }}', '{{ issue.issue_type }}')">
+                                        <i class="fas fa-shopping-cart"></i> Buy on Amazon →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+    </div>
+    {% else %}
+
+    <!-- No Issues Detected -->
+    <div class="card mb-4 shadow-lg border-success">
+        <div class="card-body text-center py-5">
+            <div class="display-1 text-success mb-4">✅</div>
+            <h2 class="mb-3">Your Build is Optimized!</h2>
+            <p class="lead text-muted">
+                We didn't detect any major performance issues. Your hardware is running great!
+            </p>
+            <p class="text-muted">
+                Keep an eye on temperatures and consider upgrading when budget allows.
+            </p>
+        </div>
+    </div>
+
+    {% endif %}
+
+    <!-- Call to Action -->
+    <div class="card bg-gradient-primary text-white shadow-lg mb-4">
+        <div class="card-body text-center py-5">
+            <h3 class="mb-3">🏆 Ready to Improve?</h3>
+            <p class="lead mb-4">
+                {% if issues %}
+                Fix the issues above, then re-run the benchmark to see your gains!
+                {% else %}
+                Share your optimized build with the community!
+                {% endif %}
+            </p>
+            {% if issues %}
+            <p class="mb-4">
+                <strong>Unlock achievements by improving your FPS!</strong><br>
+                🔥 Thermal Hero • ⚡ Performance Booster • 🚀 Mega Improvement
+            </p>
+            {% endif %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('submit.submit') }}" class="btn btn-light btn-lg px-5">
+                    <i class="fas fa-upload"></i> Re-Run Benchmark
+                </a>
+                <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-light btn-lg px-5">
+                    <i class="fas fa-trophy"></i> View Leaderboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Section -->
+    <div class="text-center mb-5">
+        <h4 class="mb-3">Share Your Results</h4>
+        <div class="btn-group" role="group">
+            <a href="https://twitter.com/intent/tweet?text=I%20just%20benchmarked%20my%20budget%20PC%20and%20got%20{{ submission.fps_avg|round(1) }}%20FPS!%20Test%20yours%20at%20piggybankpc.com"
+               target="_blank"
+               class="btn btn-outline-primary">
+                <i class="fab fa-twitter"></i> Twitter
+            </a>
+            <a href="https://www.facebook.com/sharer/sharer.php?u=piggybankpc.com"
+               target="_blank"
+               class="btn btn-outline-primary">
+                <i class="fab fa-facebook"></i> Facebook
+            </a>
+            <a href="https://discord.com"
+               target="_blank"
+               class="btn btn-outline-primary">
+                <i class="fab fa-discord"></i> Discord
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<style>
+/* Custom styles for diagnostic page */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #FF6B35 0%, #e55a2a 100%);
+}
+
+.card-header h4 {
+    font-weight: 600;
+}
+
+.products-section .card {
+    transition: transform 0.2s;
+}
+
+.products-section .card:hover {
+    transform: translateY(-5px);
+}
+
+.btn-lg {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .display-3 {
+        font-size: 2.5rem;
+    }
+    .display-4 {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}

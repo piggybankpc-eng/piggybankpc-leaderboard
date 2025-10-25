@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Flask
+instance/
+*.db
+*.sqlite
+
+# Secrets (NEVER COMMIT THESE!)
+.env
+.env.local
+.env.*.local
+
+# Uploads & logs
+uploads/
+logs/
+*.log
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test files
+test_benchmark*.pbr
+TEST_*.md
+*_ADDED.md
+CONFIG_*.md
+FILE_FORMAT_FIX.md
+WHATS_NEXT.md

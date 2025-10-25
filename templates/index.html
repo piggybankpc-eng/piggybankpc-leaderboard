@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}PiggyBankPC Leaderboard - Budget Builds Competition{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row mb-5">
+    <div class="col-lg-12 text-center">
+        <h1 class="display-3 fw-bold text-primary">
+            <i class="fas fa-piggy-bank"></i> PiggyBankPC Leaderboard
+        </h1>
+        <p class="lead text-muted">
+            Turn E-Waste Into Excellence - Benchmark Your Budget Build!
+        </p>
+        <div class="mt-4">
+            <a href="{{ url_for('leaderboard.index') }}" class="btn btn-primary btn-lg me-2">
+                <i class="fas fa-trophy"></i> View Leaderboard
+            </a>
+            <a href="#download" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-download"></i> Get Benchmark Suite
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-5">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center h-100 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-primary mb-3"></i>
+                <h3 class="display-6 fw-bold">{{ stats.total_submissions }}</h3>
+                <p class="text-muted">Total Submissions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center h-100 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-success mb-3"></i>
+                <h3 class="display-6 fw-bold">{{ stats.unique_users }}</h3>
+                <p class="text-muted">Unique Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center h-100 shadow-sm">
+            <div class="card-body">
+                <i class="fas fa-fire fa-3x text-warning mb-3"></i>
+                <h3 class="display-6 fw-bold">{{ stats.week_submissions }}</h3>
+                <p class="text-muted">This Week</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Submissions -->
+{% if recent_submissions %}
+<div class="row mb-5">
+    <div class="col-lg-12">
+        <h2 class="mb-4">
+            <i class="fas fa-clock"></i> Recent Submissions
+        </h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>User</th>
+                        <th>GPU</th>
+                        <th>Price</th>
+                        <th>Avg FPS</th>
+                        <th>Price/FPS</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in recent_submissions %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}">
+                                <i class="fas fa-user"></i> {{ sub.user.username }}
+                            </a>
+                        </td>
+                        <td>{{ sub.gpu_model }}</td>
+                        <td>£{{ sub.gpu_price|round(2) }}</td>
+                        <td><strong>{{ sub.fps_avg|round(1) }}</strong> FPS</td>
+                        <td>
+                            {% if sub.price_per_fps %}
+                                <span class="badge bg-success">£{{ sub.price_per_fps }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">{{ sub.submission_date|relative_time }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="text-center">
+            <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-primary">
+                View Full Leaderboard <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Best Value Submissions -->
+{% if best_value_submissions %}
+<div class="row mb-5">
+    <div class="col-lg-12">
+        <h2 class="mb-4">
+            <i class="fas fa-star"></i> Best Value (Price-per-FPS)
+        </h2>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Rank</th>
+                        <th>User</th>
+                        <th>GPU</th>
+                        <th>Price</th>
+                        <th>Avg FPS</th>
+                        <th>Price/FPS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in best_value_submissions %}
+                    <tr>
+                        <td>
+                            {% if loop.index == 1 %}
+                                <i class="fas fa-trophy text-warning"></i>
+                            {% elif loop.index == 2 %}
+                                <i class="fas fa-medal text-secondary"></i>
+                            {% elif loop.index == 3 %}
+                                <i class="fas fa-award text-danger"></i>
+                            {% else %}
+                                {{ loop.index }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}">
+                                {{ sub.user.username }}
+                            </a>
+                        </td>
+                        <td>{{ sub.gpu_model }}</td>
+                        <td>£{{ sub.gpu_price|round(2) }}</td>
+                        <td><strong>{{ sub.fps_avg|round(1) }}</strong> FPS</td>
+                        <td><span class="badge bg-success">£{{ sub.price_per_fps }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Download Section -->
+<div class="row mb-5" id="download">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-body p-5 text-center">
+                <h2 class="mb-4">
+                    <i class="fas fa-rocket"></i> Test YOUR Budget Build!
+                </h2>
+                <p class="lead mb-4">
+                    Download the PiggyBankPC Benchmark Suite and see how your hardware stacks up!
+                </p>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a href="#" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download"></i> Download for Linux
+                    </a>
+                    <a href="#" class="btn btn-outline-primary btn-lg">
+                        <i class="fab fa-github"></i> View on GitHub
+                    </a>
+                </div>
+                <p class="text-muted mt-3 small">
+                    Free & Open Source | Ubuntu 22.04+ | NVIDIA GPU Required
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works -->
+<div class="row mb-5">
+    <div class="col-lg-12">
+        <h2 class="text-center mb-4">How It Works</h2>
+        <div class="row">
+            <div class="col-md-3 text-center mb-3">
+                <div class="mb-3">
+                    <i class="fas fa-download fa-3x text-primary"></i>
+                </div>
+                <h5>1. Download</h5>
+                <p class="text-muted">Get the benchmark suite</p>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+                <div class="mb-3">
+                    <i class="fas fa-play fa-3x text-success"></i>
+                </div>
+                <h5>2. Run Tests</h5>
+                <p class="text-muted">Benchmark your hardware</p>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+                <div class="mb-3">
+                    <i class="fas fa-upload fa-3x text-warning"></i>
+                </div>
+                <h5>3. Upload</h5>
+                <p class="text-muted">Submit your .pbr file</p>
+            </div>
+            <div class="col-md-3 text-center mb-3">
+                <div class="mb-3">
+                    <i class="fas fa-trophy fa-3x text-danger"></i>
+                </div>
+                <h5>4. Compete</h5>
+                <p class="text-muted">See how you rank!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+{% if not current_user.is_authenticated %}
+<div class="row">
+    <div class="col-lg-8 mx-auto text-center">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body p-4">
+                <h3 class="mb-3">Ready to Join?</h3>
+                <p class="mb-3">
+                    Create an account to submit your benchmark results and compete on the leaderboard!
+                </p>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-user-plus"></i> Register Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

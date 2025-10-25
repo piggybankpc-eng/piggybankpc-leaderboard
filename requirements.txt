@@ -1,0 +1,18 @@
+# Core Flask dependencies
+Flask==3.0.0
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Werkzeug==3.0.1
+
+# Production WSGI server
+gunicorn==21.2.0
+
+# Security & performance
+python-dotenv==1.0.0
+
+# Optional: PostgreSQL support (uncomment if using PostgreSQL)
+# psycopg2-binary==2.9.9
+
+# Optional: Redis for session storage (uncomment if needed)
+# redis==5.0.1
+# Flask-Session==0.5.0

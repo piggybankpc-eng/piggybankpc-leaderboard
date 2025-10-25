@@ -1,0 +1,92 @@
+PiggyBankPC Leaderboard - Complete File Structure
+==================================================
+
+piggybankpc-leaderboard/
+│
+├── 📚 DOCUMENTATION
+│   ├── README.md                   - Main documentation (installation, usage, deployment)
+│   ├── QUICKSTART.md               - 5-minute setup guide
+│   ├── COOLIFY_DEPLOYMENT.md       - Coolify-specific deployment instructions
+│   ├── DEPLOYMENT_SUMMARY.md       - Complete delivery summary & next steps
+│   └── PROJECT_STRUCTURE.txt       - This file
+│
+├── 🐍 PYTHON APPLICATION
+│   ├── app.py                      - Main Flask application factory
+│   ├── config.py                   - Configuration classes (dev/prod)
+│   ├── models.py                   - SQLAlchemy models (User, Submission)
+│   └── security.py                 - Benchmark signature verification module
+│
+├── 🌐 ROUTES (Flask Blueprints)
+│   ├── routes/__init__.py          - Routes package init
+│   ├── routes/auth.py              - Authentication (login, register, logout)
+│   ├── routes/leaderboard.py       - Leaderboard display with filtering/sorting
+│   ├── routes/main.py              - Landing page and static pages
+│   ├── routes/profile.py           - User profiles and submission management
+│   └── routes/submit.py            - Benchmark submission handling & verification
+│
+├── 🎨 TEMPLATES (HTML with Jinja2)
+│   ├── templates/base.html         - Base template with navbar and footer
+│   ├── templates/index.html        - Landing page (hero, stats, preview)
+│   ├── templates/leaderboard.html  - Leaderboard table with filters
+│   ├── templates/login.html        - Login form
+│   ├── templates/register.html     - Registration form
+│   ├── templates/profile.html      - User profile with submission history
+│   └── templates/submit.html       - File upload form with drag & drop
+│
+├── 🎨 STATIC ASSETS
+│   ├── static/css/style.css        - Custom CSS (PiggyBankPC orange theme)
+│   ├── static/js/main.js           - Custom JavaScript (auto-dismiss alerts, etc.)
+│   └── static/images/              - Logo and images directory (empty - add yours!)
+│
+├── 🐳 DEPLOYMENT FILES
+│   ├── Dockerfile                  - Docker image definition (Python 3.11-slim)
+│   ├── docker-compose.yml          - Docker Compose configuration
+│   ├── requirements.txt            - Python dependencies
+│   ├── .env.example                - Environment variables template
+│   ├── .gitignore                  - Git ignore rules
+│   └── install.sh                  - Quick installation script
+│
+├── 📁 RUNTIME DIRECTORIES (auto-created)
+│   ├── instance/                   - Database directory (SQLite)
+│   │   └── database.db            - [Auto-created on first run]
+│   ├── uploads/                    - Uploaded .pbr files storage
+│   │   └── .gitkeep               - Keep directory in git
+│   └── logs/                       - Application logs
+│       └── app.log                - [Created when logging enabled]
+│
+└── 🚫 IGNORED FILES
+    ├── .env                        - Environment variables (not in git)
+    ├── venv/                       - Python virtual environment (not in git)
+    └── __pycache__/                - Python cache (not in git)
+
+==================================================
+TOTAL FILES: 27 core files + documentation
+LINES OF CODE: ~3500+ (Python + HTML + CSS + JS)
+==================================================
+
+KEY FEATURES IMPLEMENTED:
+✅ User authentication (register, login, sessions)
+✅ Cryptographic signature verification (HMAC-SHA256)
+✅ Public leaderboard with filtering and sorting
+✅ User profiles with statistics
+✅ File upload system with validation
+✅ Bootstrap 5 responsive UI
+✅ Docker containerization
+✅ Coolify deployment support
+✅ SQLite → PostgreSQL ready
+✅ Production-ready configuration
+
+DEPLOYMENT OPTIONS:
+1. Coolify (recommended) - One-click deploy with auto SSL
+2. Docker Compose - Containerized deployment
+3. Manual Install - systemd service with nginx
+
+NEXT STEPS:
+1. Test locally: ./install.sh && source venv/bin/activate && python app.py
+2. Deploy to Coolify (see COOLIFY_DEPLOYMENT.md)
+3. Add Cloudflare tunnel hostname
+4. Customize branding (logo, colors, download links)
+5. Announce to your YouTube community!
+
+Built by Claude Code for PiggyBankPC
+Turn E-Waste Into Excellence! 🐷💻🚀

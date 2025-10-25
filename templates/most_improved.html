@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+
+{% block title %}Most Improved - PiggyBankPC{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Page Header -->
+    <div class="text-center mb-5">
+        <h1 class="display-3 fw-bold mb-3">
+            <i class="fas fa-rocket text-warning"></i> Most Improved Builders
+        </h1>
+        <p class="lead text-muted">
+            These legends fixed their builds and gained MASSIVE performance!<br>
+            Proof that e-waste can excel! 🐷💻
+        </p>
+    </div>
+
+    <!-- Podium (Top 3) -->
+    {% if improvements|length >= 3 %}
+    <div class="row mb-5">
+        <!-- 2nd Place -->
+        <div class="col-md-4 order-md-1">
+            <div class="card h-100 shadow border-secondary">
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3">🥈</div>
+                    <h5 class="card-title">2nd Place</h5>
+                    <h4>
+                        <a href="{{ url_for('profile.view_profile', username=improvements[1].user.username) }}">
+                            {{ improvements[1].user.username }}
+                        </a>
+                    </h4>
+                    <p class="text-muted small">{{ improvements[1].after_submission.gpu_model }}</p>
+                    <div class="my-3">
+                        <div class="text-muted small">Before → After</div>
+                        <div class="h5">{{ improvements[1].fps_before|round(1) }} → {{ improvements[1].fps_after|round(1) }} FPS</div>
+                    </div>
+                    <div class="alert alert-success">
+                        <div class="h4 mb-0">+{{ improvements[1].fps_gain|round(1) }} FPS</div>
+                        <small>(+{{ improvements[1].fps_gain_percent|round(1) }}%)</small>
+                    </div>
+                    {% if improvements[1].fixes_applied %}
+                    <div class="mt-3">
+                        {% for fix in improvements[1].fixes_applied %}
+                        <span class="badge bg-secondary mb-1">{{ fix }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 1st Place (Center, Larger) -->
+        <div class="col-md-4 order-md-2">
+            <div class="card h-100 shadow-lg border-warning" style="transform: scale(1.05);">
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3">🏆</div>
+                    <h5 class="card-title text-warning">1st Place Champion!</h5>
+                    <h3>
+                        <a href="{{ url_for('profile.view_profile', username=improvements[0].user.username) }}">
+                            {{ improvements[0].user.username }}
+                        </a>
+                    </h3>
+                    <p class="text-muted">{{ improvements[0].after_submission.gpu_model }}</p>
+                    <div class="my-3">
+                        <div class="text-muted small">Before → After</div>
+                        <div class="h4">{{ improvements[0].fps_before|round(1) }} → {{ improvements[0].fps_after|round(1) }} FPS</div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <div class="h3 mb-0 fw-bold">+{{ improvements[0].fps_gain|round(1) }} FPS</div>
+                        <small>(+{{ improvements[0].fps_gain_percent|round(1) }}%)</small>
+                    </div>
+                    {% if improvements[0].fixes_applied %}
+                    <div class="mt-3">
+                        {% for fix in improvements[0].fixes_applied %}
+                        <span class="badge bg-warning text-dark mb-1">{{ fix }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 3rd Place -->
+        <div class="col-md-4 order-md-3">
+            <div class="card h-100 shadow border-danger">
+                <div class="card-body text-center">
+                    <div class="display-1 mb-3">🥉</div>
+                    <h5 class="card-title">3rd Place</h5>
+                    <h4>
+                        <a href="{{ url_for('profile.view_profile', username=improvements[2].user.username) }}">
+                            {{ improvements[2].user.username }}
+                        </a>
+                    </h4>
+                    <p class="text-muted small">{{ improvements[2].after_submission.gpu_model }}</p>
+                    <div class="my-3">
+                        <div class="text-muted small">Before → After</div>
+                        <div class="h5">{{ improvements[2].fps_before|round(1) }} → {{ improvements[2].fps_after|round(1) }} FPS</div>
+                    </div>
+                    <div class="alert alert-danger">
+                        <div class="h4 mb-0">+{{ improvements[2].fps_gain|round(1) }} FPS</div>
+                        <small>(+{{ improvements[2].fps_gain_percent|round(1) }}%)</small>
+                    </div>
+                    {% if improvements[2].fixes_applied %}
+                    <div class="mt-3">
+                        {% for fix in improvements[2].fixes_applied %}
+                        <span class="badge bg-danger mb-1">{{ fix }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Full Leaderboard -->
+    {% if improvements %}
+    <div class="card shadow mb-4">
+        <div class="card-header bg-light">
+            <h4 class="mb-0">
+                <i class="fas fa-list"></i> Complete Rankings
+            </h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Hardware</th>
+                            <th>Before</th>
+                            <th>After</th>
+                            <th>Gain</th>
+                            <th>% Increase</th>
+                            <th>What Fixed</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for improvement in improvements %}
+                        <tr {% if loop.index <= 3 %}class="table-warning"{% endif %}>
+                            <td>
+                                {% if loop.index == 1 %}
+                                    <i class="fas fa-trophy text-warning fa-lg"></i>
+                                {% elif loop.index == 2 %}
+                                    <i class="fas fa-medal text-secondary fa-lg"></i>
+                                {% elif loop.index == 3 %}
+                                    <i class="fas fa-award text-danger fa-lg"></i>
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('profile.view_profile', username=improvement.user.username) }}">
+                                    <i class="fas fa-user"></i> {{ improvement.user.username }}
+                                </a>
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ improvement.after_submission.gpu_model }}</small>
+                            </td>
+                            <td>{{ improvement.fps_before|round(1) }} FPS</td>
+                            <td><strong>{{ improvement.fps_after|round(1) }} FPS</strong></td>
+                            <td>
+                                <span class="badge bg-success">
+                                    +{{ improvement.fps_gain|round(1) }} FPS
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">
+                                    +{{ improvement.fps_gain_percent|round(1) }}%
+                                </span>
+                            </td>
+                            <td>
+                                {% if improvement.fixes_applied %}
+                                    {% for fix in improvement.fixes_applied %}
+                                    <span class="badge bg-secondary small">{{ fix }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-muted">
+                                <small>{{ improvement.created_at|relative_time }}</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+
+    <!-- No Improvements Yet -->
+    <div class="card shadow">
+        <div class="card-body text-center py-5">
+            <div class="display-1 text-muted mb-4">📊</div>
+            <h3 class="mb-3">No Improvements Yet</h3>
+            <p class="lead text-muted mb-4">
+                Be the first to improve your build and claim the #1 spot!
+            </p>
+            <a href="{{ url_for('submit.submit') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-upload"></i> Submit Your Benchmark
+            </a>
+        </div>
+    </div>
+
+    {% endif %}
+
+    <!-- Call to Action -->
+    <div class="card bg-primary text-white shadow-lg mt-5 mb-4">
+        <div class="card-body text-center py-5">
+            <h3 class="mb-3">🎯 Join the Hall of Fame!</h3>
+            <p class="lead mb-4">
+                Fix your thermal issues, upgrade your CPU, or optimize your build<br>
+                Then re-run the benchmark and watch yourself climb the rankings!
+            </p>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{{ url_for('submit.submit') }}" class="btn btn-light btn-lg px-5">
+                    <i class="fas fa-upload"></i> Submit Improvement
+                </a>
+                <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-light btn-lg px-5">
+                    <i class="fas fa-trophy"></i> Main Leaderboard
+                </a>
+            </div>
+            <p class="mt-4 mb-0">
+                <small>💡 Tip: Check your diagnostic report for improvement ideas!</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Success Stories -->
+    <div class="card mb-5">
+        <div class="card-header bg-light">
+            <h4 class="mb-0">
+                <i class="fas fa-lightbulb"></i> Common Fixes That Work
+            </h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <div class="h1 mb-3">🔥</div>
+                        <h5>Thermal Paste</h5>
+                        <p class="text-muted">
+                            Average gain: <strong>+15-25 FPS</strong><br>
+                            Cost: £8-15 | Time: 30 mins
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <div class="h1 mb-3">⚡</div>
+                        <h5>CPU Upgrade</h5>
+                        <p class="text-muted">
+                            Average gain: <strong>+20-40 FPS</strong><br>
+                            Cost: £40-150 | Time: 1-2 hours
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="text-center">
+                        <div class="h1 mb-3">📊</div>
+                        <h5>RAM Upgrade</h5>
+                        <p class="text-muted">
+                            Average gain: <strong>+5-15 FPS</strong><br>
+                            Cost: £18-40 | Time: 10 mins
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<style>
+/* Custom styles for Most Improved page */
+.card.shadow-lg {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(255, 107, 53, 0.05);
+}
+
+@media (max-width: 768px) {
+    .card[style*="transform"] {
+        transform: none !important;
+        margin-bottom: 1rem;
+    }
+}
+</style>
+{% endblock %}

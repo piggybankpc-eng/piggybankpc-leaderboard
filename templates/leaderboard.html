@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard - PiggyBankPC{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <h1 class="mb-3">
+            <i class="fas fa-trophy text-warning"></i> Leaderboard
+        </h1>
+        <p class="lead text-muted">
+            <i class="fas fa-gamepad text-primary"></i> Gaming Performance +
+            <i class="fas fa-robot text-info"></i> AI/LLM Performance
+        </p>
+        <p class="text-muted">
+            Compare budget builds for gaming AND local LLM inference. Find the best price-to-performance hardware for dual-purpose workloads!
+        </p>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.total_submissions }}</h3>
+                <p class="text-muted mb-0">Total Submissions</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.unique_users }}</h3>
+                <p class="text-muted mb-0">Unique Users</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.avg_fps }}</h3>
+                <p class="mb-0"><i class="fas fa-gamepad"></i> Avg Gaming FPS</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.avg_tokens }}</h3>
+                <p class="mb-0"><i class="fas fa-robot"></i> Avg AI Tokens/s</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Sorting -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('leaderboard.index') }}" class="row g-3">
+            <!-- Sort By -->
+            <div class="col-md-3">
+                <label class="form-label">Sort By</label>
+                <select name="sort" class="form-select">
+                    <option value="fps_avg" {% if sort_by == 'fps_avg' %}selected{% endif %}>🎮 Gaming FPS</option>
+                    <option value="tokens" {% if sort_by == 'tokens' %}selected{% endif %}>🤖 AI Tokens/sec</option>
+                    <option value="gpu_price" {% if sort_by == 'gpu_price' %}selected{% endif %}>💰 GPU Price</option>
+                    <option value="submission_date" {% if sort_by == 'submission_date' %}selected{% endif %}>📅 Date</option>
+                </select>
+            </div>
+
+            <!-- Order -->
+            <div class="col-md-2">
+                <label class="form-label">Order</label>
+                <select name="order" class="form-select">
+                    <option value="desc" {% if order == 'desc' %}selected{% endif %}>High to Low</option>
+                    <option value="asc" {% if order == 'asc' %}selected{% endif %}>Low to High</option>
+                </select>
+            </div>
+
+            <!-- Price Range -->
+            <div class="col-md-3">
+                <label class="form-label">Price Range</label>
+                <select name="price" class="form-select">
+                    <option value="all" {% if price_filter == 'all' %}selected{% endif %}>All Prices</option>
+                    <option value="under100" {% if price_filter == 'under100' %}selected{% endif %}>Under £100</option>
+                    <option value="100-200" {% if price_filter == '100-200' %}selected{% endif %}>£100 - £200</option>
+                    <option value="over200" {% if price_filter == 'over200' %}selected{% endif %}>Over £200</option>
+                </select>
+            </div>
+
+            <!-- GPU Brand -->
+            <div class="col-md-2">
+                <label class="form-label">GPU Brand</label>
+                <select name="gpu_brand" class="form-select">
+                    <option value="all" {% if gpu_brand == 'all' %}selected{% endif %}>All Brands</option>
+                    <option value="nvidia" {% if gpu_brand == 'nvidia' %}selected{% endif %}>NVIDIA</option>
+                    <option value="amd" {% if gpu_brand == 'amd' %}selected{% endif %}>AMD</option>
+                    <option value="intel" {% if gpu_brand == 'intel' %}selected{% endif %}>Intel</option>
+                </select>
+            </div>
+
+            <!-- Time Period -->
+            <div class="col-md-2">
+                <label class="form-label">Time Period</label>
+                <select name="time" class="form-select">
+                    <option value="all" {% if time_period == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="week" {% if time_period == 'week' %}selected{% endif %}>This Week</option>
+                    <option value="month" {% if time_period == 'month' %}selected{% endif %}>This Month</option>
+                </select>
+            </div>
+
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+                <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-undo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Leaderboard Table -->
+{% if submissions %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Rank</th>
+                        <th>User</th>
+                        <th>CPU</th>
+                        <th>GPU</th>
+                        <th>Price</th>
+                        <th>
+                            <a href="{{ url_for('leaderboard.index', sort='fps', gpu_brand=gpu_brand, price_min=price_min, price_max=price_max, time=time_period) }}"
+                               class="text-decoration-none text-dark">
+                                FPS <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>
+                            <a href="{{ url_for('leaderboard.index', sort='tokens', gpu_brand=gpu_brand, price_min=price_min, price_max=price_max, time=time_period) }}"
+                               class="text-decoration-none text-dark">
+                                AI Tokens/s <i class="fas fa-sort"></i>
+                            </a>
+                        </th>
+                        <th>Price/FPS</th>
+                        <th>Price/Token</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td>
+                            {% set rank = (pagination.page - 1) * 20 + loop.index %}
+                            {% if rank == 1 %}
+                                <i class="fas fa-trophy text-warning fa-lg"></i>
+                            {% elif rank == 2 %}
+                                <i class="fas fa-medal text-secondary fa-lg"></i>
+                            {% elif rank == 3 %}
+                                <i class="fas fa-award text-danger fa-lg"></i>
+                            {% else %}
+                                {{ rank }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}">
+                                <i class="fas fa-user"></i> {{ sub.user.username }}
+                            </a>
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ sub.cpu_model[:30] }}...</small>
+                        </td>
+                        <td>{{ sub.gpu_model }}</td>
+                        <td><strong>£{{ sub.gpu_price|round(2) }}</strong></td>
+                        <td>
+                            <span class="badge bg-primary">{{ sub.fps_avg|round(1) }}</span>
+                        </td>
+                        <td>
+                            {% if sub.ai_tokens_per_sec %}
+                                <span class="badge bg-info">{{ sub.ai_tokens_per_sec|round(1) }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sub.price_per_fps %}
+                                <span class="badge bg-success">£{{ sub.price_per_fps }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if sub.ai_tokens_per_sec and sub.gpu_price > 0 %}
+                                <span class="badge bg-warning text-dark">£{{ (sub.gpu_price / sub.ai_tokens_per_sec)|round(2) }}</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">
+                            <small>{{ sub.submission_date|relative_time }}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if pagination.pages > 1 %}
+<nav aria-label="Leaderboard pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('leaderboard.index', page=pagination.prev_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period) }}">
+                Previous
+            </a>
+        </li>
+
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('leaderboard.index', page=page_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period) }}">
+                        {{ page_num }}
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('leaderboard.index', page=pagination.next_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period) }}">
+                Next
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info text-center">
+    <i class="fas fa-info-circle"></i> No submissions found matching your filters.
+</div>
+{% endif %}
+
+{% endblock %}

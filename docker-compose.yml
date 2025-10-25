@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: piggybankpc-leaderboard
+    ports:
+      - "5555:5555"
+    environment:
+      # Flask Configuration
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+
+      # Security Keys (MUST be set via .env or Coolify!)
+      - SECRET_KEY=${SECRET_KEY}
+      - BENCHMARK_SECURITY_KEY=${BENCHMARK_SECURITY_KEY}
+
+      # Database
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///instance/database.db}
+
+      # Optional: Email configuration for notifications
+      - MAIL_SERVER=${MAIL_SERVER:-}
+      - MAIL_PORT=${MAIL_PORT:-587}
+      - MAIL_USE_TLS=${MAIL_USE_TLS:-true}
+      - MAIL_USERNAME=${MAIL_USERNAME:-}
+      - MAIL_PASSWORD=${MAIL_PASSWORD:-}
+
+      # Production settings
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+
+    volumes:
+      # Persistent data storage
+      - ./instance:/app/instance
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+    restart: unless-stopped
+
+    # Health check configuration
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    # Resource limits (adjust based on your server)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+    networks:
+      - piggybankpc-network
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  piggybankpc-network:
+    driver: bridge
