@@ -75,6 +75,11 @@ class Submission(db.Model):
     benchmark_version = db.Column(db.String(20))
     benchmark_timestamp = db.Column(db.String(50))
 
+    # Official PiggyBankPC Build tracking
+    is_official = db.Column(db.Boolean, default=False, index=True)
+    youtube_video_url = db.Column(db.String(500))  # YouTube video link for official builds
+    build_name = db.Column(db.String(200))  # Optional custom name for official builds (e.g., "Budget Beast 2024")
+
     @property
     def price_per_fps(self):
         """Calculate price-per-FPS performance metric"""

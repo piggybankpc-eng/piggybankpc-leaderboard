@@ -171,6 +171,16 @@
                             <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}">
                                 <i class="fas fa-user"></i> {{ sub.user.username }}
                             </a>
+                            {% if sub.is_official %}
+                                <span class="badge bg-danger ms-1" title="Official PiggyBankPC Build">
+                                    <i class="fas fa-check-circle"></i> Official
+                                </span>
+                            {% endif %}
+                            {% if sub.youtube_video_url %}
+                                <a href="{{ sub.youtube_video_url }}" target="_blank" class="ms-1" title="Watch build video">
+                                    <i class="fab fa-youtube text-danger"></i>
+                                </a>
+                            {% endif %}
                         </td>
                         <td>
                             <small class="text-muted">{{ sub.cpu_model[:30] }}...</small>

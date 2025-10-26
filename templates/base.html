@@ -39,6 +39,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'official_builds.index' %}active{% endif %}"
+                           href="{{ url_for('official_builds.index') }}">
+                            <i class="fas fa-check-circle"></i> Official Builds
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'most_improved.most_improved' %}active{% endif %}"
                            href="{{ url_for('most_improved.most_improved') }}">
                             <i class="fas fa-rocket"></i> Most Improved

@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Official PiggyBankPC Builds{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <h1 class="mb-3">
+            <i class="fas fa-check-circle text-danger"></i> Official PiggyBankPC Builds
+        </h1>
+        <p class="lead text-muted">
+            <i class="fab fa-youtube text-danger"></i> Featured builds from the
+            <a href="https://youtube.com/{{ config.YOUTUBE_CHANNEL }}" target="_blank">{{ config.YOUTUBE_CHANNEL }}</a> channel
+        </p>
+        <p class="text-muted">
+            These are verified benchmark results from official PiggyBankPC builds. Click the YouTube icon to watch the build and testing video for each system!
+        </p>
+
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> You're logged in as admin.
+            <a href="{{ url_for('official_builds.submit') }}" class="alert-link">Submit a new official build</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center border-danger">
+            <div class="card-body">
+                <h3 class="display-6 text-danger">{{ stats.total_builds }}</h3>
+                <p class="text-muted mb-0">Official Builds</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.avg_fps }}</h3>
+                <p class="mb-0"><i class="fas fa-gamepad"></i> Avg Gaming FPS</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.avg_tokens }}</h3>
+                <p class="mb-0"><i class="fas fa-robot"></i> Avg AI Tokens/s</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Official Builds Grid -->
+{% if submissions %}
+<div class="row">
+    {% for sub in submissions %}
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100 shadow-sm border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle"></i>
+                    {% if sub.build_name %}
+                        {{ sub.build_name }}
+                    {% else %}
+                        {{ sub.gpu_model }} Build
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Hardware Specs -->
+                <div class="mb-3">
+                    <h6 class="text-muted"><i class="fas fa-microchip"></i> Hardware</h6>
+                    <table class="table table-sm">
+                        <tr>
+                            <td class="text-muted">CPU:</td>
+                            <td>{{ sub.cpu_model }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">GPU:</td>
+                            <td><strong>{{ sub.gpu_model }}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">RAM:</td>
+                            <td>{{ sub.ram_total }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Price:</td>
+                            <td><strong class="text-success">£{{ sub.gpu_price|round(2) }}</strong></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- Performance -->
+                <div class="mb-3">
+                    <h6 class="text-muted"><i class="fas fa-tachometer-alt"></i> Performance</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <div class="card bg-primary text-white text-center">
+                                <div class="card-body py-2">
+                                    <h3 class="mb-0">{{ sub.fps_avg|round(1) }}</h3>
+                                    <small>Gaming FPS</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-info text-white text-center">
+                                <div class="card-body py-2">
+                                    <h3 class="mb-0">
+                                        {% if sub.ai_tokens_per_sec %}
+                                            {{ sub.ai_tokens_per_sec|round(1) }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h3>
+                                    <small>AI Tokens/s</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-success text-white text-center">
+                                <div class="card-body py-2">
+                                    <h4 class="mb-0">
+                                        {% if sub.price_per_fps %}
+                                            £{{ sub.price_per_fps }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h4>
+                                    <small>Price/FPS</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card bg-warning text-dark text-center">
+                                <div class="card-body py-2">
+                                    <h4 class="mb-0">
+                                        {% if sub.ai_tokens_per_sec and sub.gpu_price > 0 %}
+                                            £{{ (sub.gpu_price / sub.ai_tokens_per_sec)|round(2) }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </h4>
+                                    <small>Price/Token</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- YouTube Video Link -->
+                {% if sub.youtube_video_url %}
+                <div class="d-grid mb-2">
+                    <a href="{{ sub.youtube_video_url }}" target="_blank" class="btn btn-danger">
+                        <i class="fab fa-youtube"></i> Watch Build & Testing Video
+                    </a>
+                </div>
+                {% endif %}
+
+                <!-- Compare Button -->
+                <div class="d-grid">
+                    <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-trophy"></i> Compare on Community Leaderboard
+                    </a>
+                </div>
+
+                <!-- Admin Actions -->
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <div class="d-grid mt-2">
+                    <form method="POST" action="{{ url_for('official_builds.delete', submission_id=sub.id) }}"
+                          onsubmit="return confirm('Are you sure you want to delete this official build?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-muted">
+                <small>
+                    <i class="fas fa-clock"></i> Submitted {{ sub.submission_date|relative_time }}
+                </small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="alert alert-info text-center">
+    <i class="fas fa-info-circle"></i> No official builds have been posted yet. Check back soon!
+</div>
+{% endif %}
+
+<!-- Call to Action for Community -->
+<div class="card bg-light mt-5">
+    <div class="card-body text-center">
+        <h4><i class="fas fa-users"></i> Want to compare your system?</h4>
+        <p class="text-muted">
+            Submit your own benchmark to see how your build stacks up against these official systems!
+        </p>
+        <a href="{{ url_for('submit.submit') }}" class="btn btn-primary">
+            <i class="fas fa-upload"></i> Submit Your Benchmark
+        </a>
+        <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-trophy"></i> View Community Leaderboard
+        </a>
+    </div>
+</div>
+
+{% endblock %}
