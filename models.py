@@ -20,6 +20,11 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_admin = db.Column(db.Boolean, default=False)
 
+    # Email verification
+    email_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.String(100), nullable=True)  # Unique enforced in code
+    verification_token_expires = db.Column(db.DateTime, nullable=True)
+
     # Relationships
     submissions = db.relationship('Submission', backref='user', lazy='dynamic', cascade='all, delete-orphan', foreign_keys='Submission.user_id')
     improvements = db.relationship('Improvement', backref='user', lazy='dynamic', cascade='all, delete-orphan')
@@ -32,6 +37,25 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         """Verify password"""
         return check_password_hash(self.password_hash, password)
+
+    def generate_verification_token(self):
+        """Generate email verification token"""
+        import secrets
+        from datetime import timedelta
+        self.verification_token = secrets.token_urlsafe(32)
+        self.verification_token_expires = datetime.utcnow() + timedelta(hours=24)
+        return self.verification_token
+
+    def verify_email_token(self, token):
+        """Verify email verification token"""
+        if self.verification_token != token:
+            return False
+        if datetime.utcnow() > self.verification_token_expires:
+            return False
+        self.email_verified = True
+        self.verification_token = None
+        self.verification_token_expires = None
+        return True
 
     def __repr__(self):
         return f'<User {self.username}>'

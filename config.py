@@ -30,6 +30,18 @@ class Config:
     RATELIMIT_ENABLED = True
     RATELIMIT_STORAGE_URL = "memory://"
 
+    # Email configuration
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
+    MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or 'noreply@piggybankpc.uk'
+
+    # Domain settings
+    DOMAIN = os.environ.get('DOMAIN') or 'piggybankpc.uk'
+    YOUTUBE_CHANNEL = os.environ.get('YOUTUBE_CHANNEL') or '@piggybankpc'
+
     @staticmethod
     def init_app(app):
         """Initialize application configuration"""

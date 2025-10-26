@@ -10,6 +10,9 @@ gunicorn==21.2.0
 # Security & performance
 python-dotenv==1.0.0
 
+# Email sending
+Flask-Mail==0.9.1
+
 # Optional: PostgreSQL support (uncomment if using PostgreSQL)
 # psycopg2-binary==2.9.9
 

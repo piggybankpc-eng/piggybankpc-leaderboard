@@ -1,10 +1,11 @@
 """
 PiggyBankPC Leaderboard - Authentication Routes
 """
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from urllib.parse import urlparse as url_parse
 from models import db, User
+from utils.email import send_verification_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -49,10 +50,21 @@ def register():
         # Create new user
         user = User(username=username, email=email)
         user.set_password(password)
+
+        # Generate verification token
+        user.generate_verification_token()
+
         db.session.add(user)
         db.session.commit()
 
-        flash('Registration successful! Please log in.', 'success')
+        # Send verification email
+        try:
+            send_verification_email(user)
+            flash(f'Registration successful! Please check {email} for verification link.', 'success')
+        except Exception as e:
+            current_app.logger.error(f"Failed to send verification email: {str(e)}")
+            flash('Registration successful! However, we couldn\'t send the verification email. Please contact support.', 'warning')
+
         return redirect(url_for('auth.login'))
 
     return render_template('register.html')
@@ -79,6 +91,11 @@ def login():
             flash('Invalid username/email or password', 'danger')
             return render_template('login.html')
 
+        # Check if email is verified
+        if not user.email_verified:
+            flash('Please verify your email address before logging in. Check your inbox for the verification link.', 'warning')
+            return render_template('login.html')
+
         login_user(user, remember=remember)
 
         # Redirect to next page or index
@@ -99,3 +116,59 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('main.index'))
+
+
+@auth_bp.route('/verify-email/<token>')
+def verify_email(token):
+    """Verify user email with token"""
+
+    # Find user with this token
+    user = User.query.filter_by(verification_token=token).first()
+
+    if not user:
+        flash('Invalid or expired verification link.', 'danger')
+        return redirect(url_for('auth.login'))
+
+    # Verify the token
+    if user.verify_email_token(token):
+        db.session.commit()
+        flash('Email verified successfully! You can now log in.', 'success')
+    else:
+        flash('Verification link has expired. Please contact support.', 'danger')
+
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/resend-verification', methods=['GET', 'POST'])
+def resend_verification():
+    """Resend verification email"""
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            # Don't reveal if email exists or not
+            flash('If that email is registered, a verification link has been sent.', 'info')
+            return redirect(url_for('auth.login'))
+
+        if user.email_verified:
+            flash('This email is already verified. You can log in.', 'info')
+            return redirect(url_for('auth.login'))
+
+        # Generate new token
+        user.generate_verification_token()
+        db.session.commit()
+
+        # Send verification email
+        try:
+            send_verification_email(user)
+            flash('Verification email sent! Please check your inbox.', 'success')
+        except Exception as e:
+            current_app.logger.error(f"Failed to send verification email: {str(e)}")
+            flash('Failed to send email. Please try again later.', 'danger')
+
+        return redirect(url_for('auth.login'))
+
+    return render_template('resend_verification.html')

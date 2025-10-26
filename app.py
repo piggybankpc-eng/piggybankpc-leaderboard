@@ -3,6 +3,7 @@ PiggyBankPC Leaderboard - Main Application
 """
 from flask import Flask
 from flask_login import LoginManager
+from flask_mail import Mail
 from models import db, User
 from config import config
 import os
@@ -13,6 +14,9 @@ login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Please log in to access this page.'
 login_manager.login_message_category = 'info'
+
+# Initialize Flask-Mail
+mail = Mail()
 
 
 @login_manager.user_loader
@@ -34,6 +38,7 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
+    mail.init_app(app)
 
     # Configure logging
     if not app.debug:
