@@ -45,6 +45,12 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'best_all_rounder.index' %}active{% endif %}"
+                           href="{{ url_for('best_all_rounder.index') }}">
+                            <i class="fas fa-star"></i> Best All-Rounder
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'most_improved.most_improved' %}active{% endif %}"
                            href="{{ url_for('most_improved.most_improved') }}">
                             <i class="fas fa-rocket"></i> Most Improved

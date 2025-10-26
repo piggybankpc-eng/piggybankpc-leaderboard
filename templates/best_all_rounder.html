@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Best All-Rounder - PiggyBankPC{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <h1 class="mb-3">
+            <i class="fas fa-star text-warning"></i> Best All-Rounder
+        </h1>
+        <p class="lead text-muted">
+            <i class="fas fa-gamepad text-primary"></i> Gaming + <i class="fas fa-robot text-info"></i> AI Performance
+        </p>
+        <p class="text-muted">
+            The perfect balance! Systems that excel at BOTH gaming FPS and AI/LLM workloads.
+            All-Rounder Score combines gaming performance (FPS) and AI performance (tokens/sec) into a single balanced metric.
+        </p>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h3 class="display-6 text-warning">{{ stats.total_all_rounders }}</h3>
+                <p class="text-muted mb-0">Dual-Purpose Systems</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-warning">
+            <div class="card-body">
+                <h3 class="display-6 text-dark">{{ stats.avg_score }}</h3>
+                <p class="text-dark mb-0"><i class="fas fa-star"></i> Avg All-Rounder Score</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-primary text-white">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.best_fps }}</h3>
+                <p class="mb-0"><i class="fas fa-gamepad"></i> Best FPS</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center bg-info text-white">
+            <div class="card-body">
+                <h3 class="display-6">{{ stats.best_tokens }}</h3>
+                <p class="mb-0"><i class="fas fa-robot"></i> Best Tokens/s</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How Score is Calculated -->
+<div class="alert alert-info mb-4">
+    <h5><i class="fas fa-calculator"></i> How All-Rounder Score is Calculated</h5>
+    <p class="mb-0">
+        <strong>Formula:</strong> (Gaming Score + AI Score) / 2
+    </p>
+    <ul class="mb-0 mt-2">
+        <li><strong>Gaming Score:</strong> FPS normalized to 0-100 (60 FPS = baseline, 120+ FPS = max)</li>
+        <li><strong>AI Score:</strong> Tokens/sec normalized to 0-100 (10 t/s = baseline, 50+ t/s = max)</li>
+        <li><strong>Result:</strong> 0-100 score showing balanced performance across BOTH workloads</li>
+    </ul>
+</div>
+
+<!-- All-Rounder Leaderboard -->
+{% if submissions %}
+<div class="card mb-4">
+    <div class="card-header bg-warning">
+        <h5 class="mb-0 text-dark">
+            <i class="fas fa-trophy"></i> Best All-Rounder Systems
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Rank</th>
+                        <th>
+                            <i class="fas fa-star text-warning"></i> All-Rounder Score
+                        </th>
+                        <th>User</th>
+                        <th>GPU</th>
+                        <th>Price</th>
+                        <th><i class="fas fa-gamepad"></i> FPS</th>
+                        <th><i class="fas fa-robot"></i> Tokens/s</th>
+                        <th>Performance Type</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in submissions %}
+                    {% set sub = item.submission %}
+                    {% set rank = loop.index %}
+                    <tr>
+                        <td>
+                            {% if rank == 1 %}
+                                <i class="fas fa-trophy text-warning fa-lg"></i>
+                            {% elif rank == 2 %}
+                                <i class="fas fa-medal text-secondary fa-lg"></i>
+                            {% elif rank == 3 %}
+                                <i class="fas fa-award text-danger fa-lg"></i>
+                            {% else %}
+                                {{ rank }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <h4 class="mb-0 text-warning">
+                                <strong>{{ item.score }}</strong>/100
+                            </h4>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}">
+                                <i class="fas fa-user"></i> {{ sub.user.username }}
+                            </a>
+                            {% if sub.is_official %}
+                                <span class="badge bg-danger ms-1">
+                                    <i class="fas fa-check-circle"></i> Official
+                                </span>
+                            {% endif %}
+                            {% if sub.youtube_video_url %}
+                                <a href="{{ sub.youtube_video_url }}" target="_blank" class="ms-1">
+                                    <i class="fab fa-youtube text-danger"></i>
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>{{ sub.gpu_model }}</td>
+                        <td><strong>£{{ sub.gpu_price|round(2) }}</strong></td>
+                        <td>
+                            <span class="badge bg-primary">{{ sub.fps_avg|round(1) }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ sub.ai_tokens_per_sec|round(1) }}</span>
+                        </td>
+                        <td>
+                            {% set fps_score = (sub.fps_avg / 120) * 100 %}
+                            {% set token_score = (sub.ai_tokens_per_sec / 50) * 100 %}
+                            {% if fps_score > token_score + 20 %}
+                                <span class="badge bg-primary">Gaming-Focused</span>
+                            {% elif token_score > fps_score + 20 %}
+                                <span class="badge bg-info">AI-Focused</span>
+                            {% else %}
+                                <span class="badge bg-success">Balanced</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted">
+                            <small>{{ sub.submission_date|relative_time }}</small>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="alert alert-warning text-center">
+    <i class="fas fa-exclamation-triangle"></i> No all-rounder systems found yet.
+    <br>
+    <small>Systems need both FPS and AI benchmark results to qualify.</small>
+</div>
+{% endif %}
+
+<!-- Call to Action -->
+<div class="card bg-light">
+    <div class="card-body text-center">
+        <h4><i class="fas fa-star text-warning"></i> Build the Ultimate All-Rounder</h4>
+        <p class="text-muted">
+            Want to top this leaderboard? You need a system that's great at gaming AND AI workloads!
+        </p>
+        <a href="{{ url_for('submit.submit') }}" class="btn btn-warning">
+            <i class="fas fa-upload"></i> Submit Your Benchmark
+        </a>
+        <a href="{{ url_for('leaderboard.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-trophy"></i> View All Leaderboards
+        </a>
+    </div>
+</div>
+
+{% endblock %}

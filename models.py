@@ -88,6 +88,31 @@ class Submission(db.Model):
         return None
 
     @property
+    def all_rounder_score(self):
+        """
+        Calculate All-Rounder Score - balanced performance for gaming + AI
+        Combines FPS (gaming) and Tokens/sec (AI) into a single score
+
+        Formula: (FPS_normalized + Tokens_normalized) / 2
+        - Normalizes FPS to 0-100 scale (60 FPS = baseline, 120+ = max)
+        - Normalizes Tokens/sec to 0-100 scale (10 t/s = baseline, 50+ = max)
+        - Returns average of both for balanced score
+        """
+        if not self.fps_avg or not self.ai_tokens_per_sec:
+            return None
+
+        # Normalize FPS (60 = baseline, 120+ = excellent)
+        fps_normalized = min(100, (self.fps_avg / 120) * 100)
+
+        # Normalize Tokens/sec (10 = baseline, 50+ = excellent)
+        tokens_normalized = min(100, (self.ai_tokens_per_sec / 50) * 100)
+
+        # Average of both (0-100 scale)
+        score = (fps_normalized + tokens_normalized) / 2
+
+        return round(score, 1)
+
+    @property
     def gpu_brand(self):
         """Extract GPU brand from model"""
         if not self.gpu_model:
