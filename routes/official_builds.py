@@ -94,7 +94,13 @@ def index():
     """Display official PiggyBankPC builds leaderboard"""
 
     # Get only official builds
-    query = Submission.query.filter_by(is_official=True, verified=True)
+    # Admins see all (including unpublished), regular users only see published
+    if current_user.is_authenticated and current_user.is_admin:
+        # Admin view: show all official builds including unpublished (for management)
+        query = Submission.query.filter_by(is_official=True, verified=True)
+    else:
+        # Public view: only show published official builds (anti-spoiler)
+        query = Submission.query.filter_by(is_official=True, verified=True, published=True)
 
     # Sort by FPS (highest first)
     query = query.order_by(Submission.fps_avg.desc())
@@ -186,11 +192,18 @@ def submit():
                 is_official=True,  # Mark as official build
                 youtube_video_url=youtube_url if youtube_url else None,
                 build_name=build_name if build_name else None,
+                published=(youtube_url != ''),  # Auto-publish if YouTube URL provided, otherwise keep hidden
                 **submission_data
             )
 
             db.session.add(submission)
             db.session.commit()
+
+            # Log publish status
+            if youtube_url:
+                current_app.logger.info(f"Official build published with YouTube link: {youtube_url}")
+            else:
+                current_app.logger.info(f"Official build created as UNPUBLISHED (no YouTube link) - anti-spoiler active")
 
             # Run diagnostic analysis
             issues = analyze_submission(submission)
@@ -205,6 +218,43 @@ def submit():
             return redirect(request.url)
 
     return render_template('official_builds_submit.html')
+
+
+@official_builds_bp.route('/official-builds/<int:submission_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def edit(submission_id):
+    """Admin-only editing of official builds - add YouTube URL and publish"""
+
+    submission = Submission.query.get_or_404(submission_id)
+
+    if not submission.is_official:
+        flash('This is not an official build.', 'danger')
+        return redirect(url_for('official_builds.index'))
+
+    if request.method == 'POST':
+        youtube_url = request.form.get('youtube_url', '').strip()
+        build_name = request.form.get('build_name', '').strip()
+        published = request.form.get('published') == 'on'
+
+        try:
+            submission.youtube_video_url = youtube_url if youtube_url else None
+            submission.build_name = build_name if build_name else None
+            submission.published = published
+
+            db.session.commit()
+
+            status = "published" if published else "unpublished"
+            flash(f'Official build updated and {status}!', 'success')
+            current_app.logger.info(f"Official build {submission.id} updated - published: {published}")
+
+            return redirect(url_for('official_builds.index'))
+
+        except Exception as e:
+            current_app.logger.error(f"Edit error: {str(e)}")
+            flash('Error updating build.', 'danger')
+            return redirect(request.url)
+
+    return render_template('official_builds_edit.html', submission=submission)
 
 
 @official_builds_bp.route('/official-builds/<int:submission_id>/delete', methods=['POST'])

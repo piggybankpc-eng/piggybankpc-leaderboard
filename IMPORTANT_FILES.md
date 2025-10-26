@@ -301,3 +301,42 @@ sudo journalctl -u cloudflared -n 50
 **Server:** Ubuntu 24 at /home/john/Desktop/piggybankpc-leaderboard
 
 **Port:** 5555 (localhost only, exposed via Cloudflare tunnel)
+
+---
+
+## 🆕 Official Builds Feature
+
+### Admin-Only Routes
+**Submit Official Build:** https://ap.piggybankpc.uk/official-builds/submit
+**Official Builds Page:** https://ap.piggybankpc.uk/official-builds
+
+### Make Yourself Admin
+```bash
+cd /home/john/Desktop/piggybankpc-leaderboard
+source venv/bin/activate
+python make_admin.py YOUR_USERNAME
+```
+
+### Submit Official Build
+1. Log in as admin
+2. Go to **Official Builds** → **Submit**
+3. Upload .pbr benchmark file
+4. Add YouTube video URL (from @piggybankpc channel)
+5. Give build a name (e.g., "Budget Beast 2024")
+6. Submit!
+
+### How It Works
+- **Official builds appear on BOTH leaderboards:**
+  - Dedicated "Official Builds" showcase page
+  - Community leaderboard with special "Official" badge
+- **YouTube Integration:**
+  - Click YouTube icon to watch build video
+  - Drives traffic to your channel
+- **Comparison:**
+  - Viewers can compare their systems to official builds
+  - Helps populate leaderboard when starting out
+
+### Database Fields Added
+- `is_official` (BOOLEAN) - Marks official PiggyBankPC builds
+- `youtube_video_url` (VARCHAR 500) - Link to YouTube video
+- `build_name` (VARCHAR 200) - Custom name for build

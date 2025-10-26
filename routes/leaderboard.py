@@ -21,8 +21,8 @@ def index():
     time_period = request.args.get('time', 'all')
     page = request.args.get('page', 1, type=int)
 
-    # Start with base query
-    query = Submission.query.filter_by(verified=True)
+    # Start with base query - exclude unpublished official builds (anti-spoiler)
+    query = Submission.query.filter_by(verified=True, published=True)
 
     # Apply price filter
     if price_filter == 'under100':
@@ -78,12 +78,20 @@ def index():
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     submissions = pagination.items
 
-    # Get statistics
-    total_submissions = Submission.query.filter_by(verified=True).count()
-    unique_users = db.session.query(Submission.user_id).distinct().count()
-    avg_fps = db.session.query(db.func.avg(Submission.fps_avg)).scalar() or 0
+    # Get statistics - exclude unpublished submissions
+    total_submissions = Submission.query.filter_by(verified=True, published=True).count()
+    unique_users = db.session.query(Submission.user_id).filter(
+        Submission.verified == True,
+        Submission.published == True
+    ).distinct().count()
+    avg_fps = db.session.query(db.func.avg(Submission.fps_avg)).filter(
+        Submission.verified == True,
+        Submission.published == True
+    ).scalar() or 0
     avg_tokens = db.session.query(db.func.avg(Submission.ai_tokens_per_sec)).filter(
-        Submission.ai_tokens_per_sec.isnot(None)
+        Submission.ai_tokens_per_sec.isnot(None),
+        Submission.verified == True,
+        Submission.published == True
     ).scalar() or 0
 
     stats = {

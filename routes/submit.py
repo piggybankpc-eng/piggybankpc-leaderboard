@@ -151,6 +151,13 @@ def submit():
                 **submission_data
             )
 
+            # Anti-Spoiler: If user is admin uploading official build, mark as unpublished
+            # This prevents spoilers until YouTube video is released
+            if current_user.is_admin:
+                submission.is_official = True
+                submission.published = False  # Hidden until YouTube link added
+                current_app.logger.info(f"Official build submission - marked as unpublished (anti-spoiler)")
+
             db.session.add(submission)
             db.session.commit()
 

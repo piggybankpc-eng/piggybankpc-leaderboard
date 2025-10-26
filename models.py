@@ -103,6 +103,7 @@ class Submission(db.Model):
     is_official = db.Column(db.Boolean, default=False, index=True)
     youtube_video_url = db.Column(db.String(500))  # YouTube video link for official builds
     build_name = db.Column(db.String(200))  # Optional custom name for official builds (e.g., "Budget Beast 2024")
+    published = db.Column(db.Boolean, default=True, index=True)  # False = hidden until YouTube link added (anti-spoiler)
 
     @property
     def price_per_fps(self):

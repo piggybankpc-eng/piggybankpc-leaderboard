@@ -13,9 +13,10 @@ best_all_rounder_bp = Blueprint('best_all_rounder', __name__)
 def index():
     """Best All-Rounder leaderboard - balanced gaming + AI performance"""
 
-    # Get all submissions with both FPS and AI scores
+    # Get all submissions with both FPS and AI scores - exclude unpublished (anti-spoiler)
     submissions = Submission.query.filter(
         Submission.verified == True,
+        Submission.published == True,
         Submission.fps_avg.isnot(None),
         Submission.ai_tokens_per_sec.isnot(None)
     ).all()
