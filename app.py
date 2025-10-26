@@ -54,6 +54,8 @@ def create_app(config_name=None):
     from routes.analytics import analytics_bp
     # Official PiggyBankPC Builds
     from routes.official_builds import official_builds_bp
+    # Admin Dashboard
+    from routes.admin import admin_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -66,6 +68,8 @@ def create_app(config_name=None):
     app.register_blueprint(analytics_bp)
     # Official builds blueprint
     app.register_blueprint(official_builds_bp)
+    # Admin blueprint
+    app.register_blueprint(admin_bp)
 
     # Health check endpoint for Docker/Kubernetes/Coolify monitoring
     @app.route('/health')
