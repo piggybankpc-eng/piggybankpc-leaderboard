@@ -62,3 +62,9 @@ def index():
 def about():
     """About page"""
     return render_template('about.html')
+
+
+@main_bp.route('/download')
+def download():
+    """Download page for benchmark AppImage"""
+    return render_template('download.html')
