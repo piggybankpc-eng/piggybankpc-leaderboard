@@ -254,15 +254,15 @@ if [ -f "$APPIMAGE_PATH" ]; then
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         echo "Using existing AppImage"
     else
-        echo "Downloading from GitHub..."
-        curl -L "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage" \
+        echo "Downloading from piggybankpc.uk..."
+        curl -L "https://piggybankpc.uk/static/PiggyBankPC-Benchmark.AppImage" \
              -o "$APPIMAGE_PATH"
         chmod +x "$APPIMAGE_PATH"
         echo "Downloaded to: $APPIMAGE_PATH"
     fi
 else
-    echo "Downloading from GitHub..."
-    curl -L "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage" \
+    echo "Downloading from piggybankpc.uk..."
+    curl -L "https://piggybankpc.uk/static/PiggyBankPC-Benchmark.AppImage" \
          -o "$APPIMAGE_PATH"
     chmod +x "$APPIMAGE_PATH"
     echo "Downloaded to: $APPIMAGE_PATH"
