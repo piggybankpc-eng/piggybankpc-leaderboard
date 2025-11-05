@@ -2,7 +2,7 @@
 Benchmark API Routes
 Provides web-based benchmark control and real-time progress updates
 """
-from flask import Blueprint, jsonify, request, render_template, send_file
+from flask import Blueprint, jsonify, request, render_template, send_file, session
 import subprocess
 import json
 import os
@@ -16,6 +16,65 @@ benchmark_api_bp = Blueprint('benchmark_api', __name__)
 
 # Store active benchmark processes
 active_benchmarks = {}
+
+
+def _detect_system_hardware():
+    """
+    Detect hardware on host system
+    This runs BEFORE launching AppImage to ensure accurate detection
+    """
+    hardware_info = {
+        'cpu': {},
+        'gpu': {},
+        'ram': {}
+    }
+
+    # Detect CPU
+    try:
+        result = subprocess.run(['lscpu'], capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if 'Model name:' in line:
+                    hardware_info['cpu']['model'] = line.split(':', 1)[1].strip()
+                elif 'CPU MHz:' in line:
+                    hardware_info['cpu']['speed'] = line.split(':', 1)[1].strip() + ' MHz'
+                elif 'CPU(s):' in line and 'On-line' not in line:
+                    hardware_info['cpu']['cores'] = line.split(':', 1)[1].strip()
+            hardware_info['cpu']['detected'] = True
+        else:
+            hardware_info['cpu'] = {'model': 'Unknown', 'detected': False}
+    except Exception as e:
+        hardware_info['cpu'] = {'model': 'Unknown', 'detected': False, 'error': str(e)}
+
+    # Detect GPU
+    try:
+        result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+                              capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            hardware_info['gpu']['model'] = result.stdout.strip()
+            hardware_info['gpu']['detected'] = True
+        else:
+            hardware_info['gpu'] = {'model': 'Unknown', 'detected': False}
+    except Exception as e:
+        hardware_info['gpu'] = {'model': 'Unknown', 'detected': False, 'error': str(e)}
+
+    # Detect RAM
+    try:
+        result = subprocess.run(['free', '-h'], capture_output=True, text=True, timeout=5)
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if line.startswith('Mem:'):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        hardware_info['ram']['total'] = parts[1]
+                        hardware_info['ram']['detected'] = True
+        else:
+            hardware_info['ram'] = {'total': 'Unknown', 'detected': False}
+    except Exception as e:
+        hardware_info['ram'] = {'total': 'Unknown', 'detected': False, 'error': str(e)}
+
+    return hardware_info
+
 
 class BenchmarkRunner:
     """Manages benchmark execution and status tracking"""
@@ -115,50 +174,12 @@ class BenchmarkRunner:
 
     def _detect_hardware_for_benchmark(self):
         """Detect hardware on host system before launching AppImage"""
-        hardware_info = {
-            'cpu': {},
-            'gpu': {},
-            'ram': {}
-        }
+        # Use pre-detected hardware from session if available
+        if 'detected_hardware' in session:
+            return session['detected_hardware']
 
-        # Detect CPU
-        try:
-            result = subprocess.run(['lscpu'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                for line in result.stdout.split('\n'):
-                    if 'Model name:' in line:
-                        hardware_info['cpu']['model'] = line.split(':', 1)[1].strip()
-                    elif 'CPU MHz:' in line:
-                        hardware_info['cpu']['speed'] = line.split(':', 1)[1].strip() + ' MHz'
-                    elif 'CPU(s):' in line and 'On-line' not in line:
-                        hardware_info['cpu']['cores'] = line.split(':', 1)[1].strip()
-        except Exception as e:
-            hardware_info['cpu'] = {'model': 'Unknown', 'error': str(e)}
-
-        # Detect GPU
-        try:
-            result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
-                                  capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                hardware_info['gpu']['model'] = result.stdout.strip()
-            else:
-                hardware_info['gpu']['model'] = 'Unknown'
-        except Exception as e:
-            hardware_info['gpu'] = {'model': 'Unknown', 'error': str(e)}
-
-        # Detect RAM
-        try:
-            result = subprocess.run(['free', '-h'], capture_output=True, text=True, timeout=5)
-            if result.returncode == 0:
-                for line in result.stdout.split('\n'):
-                    if line.startswith('Mem:'):
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            hardware_info['ram']['total'] = parts[1]
-        except Exception as e:
-            hardware_info['ram'] = {'total': 'Unknown', 'error': str(e)}
-
-        return hardware_info
+        # Otherwise detect now
+        return _detect_system_hardware()
 
     def _run_real_benchmark(self, appimage_path):
         """Actually run the AppImage and parse real results"""
@@ -336,72 +357,20 @@ def benchmark_control_page():
 
 @benchmark_api_bp.route('/api/benchmark/system-info')
 def get_system_info():
-    """Get system information"""
+    """Get system information - uses pre-detected hardware from session"""
     try:
-        # Detect GPU
-        gpu_info = {}
-        try:
-            result = subprocess.run(
-                ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                gpu_info['model'] = result.stdout.strip()
-                gpu_info['detected'] = True
-            else:
-                gpu_info['model'] = 'Unknown'
-                gpu_info['detected'] = False
-        except:
-            gpu_info['model'] = 'Unknown'
-            gpu_info['detected'] = False
-
-        # Detect CPU
-        cpu_info = {}
-        try:
-            result = subprocess.run(
-                ['lscpu'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                for line in result.stdout.split('\n'):
-                    if 'Model name:' in line:
-                        cpu_info['model'] = line.split(':', 1)[1].strip()
-                        cpu_info['detected'] = True
-                        break
-            if not cpu_info:
-                cpu_info['model'] = 'Unknown'
-                cpu_info['detected'] = False
-        except:
-            cpu_info['model'] = 'Unknown'
-            cpu_info['detected'] = False
-
-        # Detect RAM
-        ram_info = {}
-        try:
-            result = subprocess.run(
-                ['free', '-h'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                for line in result.stdout.split('\n'):
-                    if line.startswith('Mem:'):
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            ram_info['total'] = parts[1]
-                            ram_info['detected'] = True
-                            break
-            if not ram_info:
-                ram_info['total'] = 'Unknown'
-                ram_info['detected'] = False
-        except:
-            ram_info['total'] = 'Unknown'
-            ram_info['detected'] = False
+        # Use pre-detected hardware from session (set during prepare phase)
+        if 'detected_hardware' in session:
+            hardware = session['detected_hardware']
+            cpu_info = hardware.get('cpu', {})
+            gpu_info = hardware.get('gpu', {})
+            ram_info = hardware.get('ram', {})
+        else:
+            # Fallback: detect now if not in session
+            hardware = _detect_system_hardware()
+            cpu_info = hardware.get('cpu', {})
+            gpu_info = hardware.get('gpu', {})
+            ram_info = hardware.get('ram', {})
 
         # Check GPU price (from config file)
         gpu_price = 0.0
@@ -487,8 +456,15 @@ def save_gpu_price():
 
 @benchmark_api_bp.route('/api/benchmark/prepare', methods=['POST'])
 def prepare_benchmark():
-    """Prepare system for benchmarking - download AppImage, check dependencies"""
+    """Prepare system for benchmarking - download AppImage, detect hardware"""
     try:
+        # STEP 1: Pre-detect hardware FIRST
+        hardware_info = _detect_system_hardware()
+
+        # Store in session for later use
+        session['detected_hardware'] = hardware_info
+
+        # STEP 2: Check for AppImage
         home_dir = Path.home()
         search_locations = [
             home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage",
@@ -505,7 +481,8 @@ def prepare_benchmark():
                 appimage_path = location
                 return jsonify({
                     'success': True,
-                    'message': f'Found at {location.name}'
+                    'message': f'Found at {location.name}',
+                    'hardware': hardware_info
                 })
 
         # Download if not found
