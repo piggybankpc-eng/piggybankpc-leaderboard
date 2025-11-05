@@ -295,22 +295,62 @@ echo ""
 echo "AppImage location:"
 echo "  $APPIMAGE_PATH"
 echo ""
-echo "To run benchmark:"
-echo "  $APPIMAGE_PATH --quick       (Quick FPS test, ~15 min)"
-echo "  $APPIMAGE_PATH --full        (Full suite, ~90 min)"
+echo "Select Benchmark Type:"
+echo "  1. Quick (FPS only, ~15 min)"
+echo "  2. Full (FPS + AI + CPU, ~90 min)"
+echo "  3. FPS only"
+echo "  4. AI/Tokens only"
+echo "  5. CPU only"
+echo "  6. Skip (run later manually)"
 echo ""
-echo "Or run interactively:"
-echo "  $APPIMAGE_PATH"
-echo ""
-read -p "Run quick benchmark now? (y/n): " -n 1 -r
+read -p "Choice (1-6): " BENCHMARK_CHOICE
 echo ""
 
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo ""
-    echo "Starting quick benchmark..."
-    echo ""
-    "$APPIMAGE_PATH" --quick --no-deps-check
+case $BENCHMARK_CHOICE in
+    1)
+        echo "Starting Quick benchmark (FPS only, ~15 min)..."
+        echo ""
+        "$APPIMAGE_PATH" --quick --no-deps-check
+        BENCHMARK_RAN=1
+        ;;
+    2)
+        echo "Starting Full benchmark (FPS + AI + CPU, ~90 min)..."
+        echo ""
+        "$APPIMAGE_PATH" --full --no-deps-check
+        BENCHMARK_RAN=1
+        ;;
+    3)
+        echo "Starting FPS benchmark..."
+        echo ""
+        "$APPIMAGE_PATH" --fps --no-deps-check
+        BENCHMARK_RAN=1
+        ;;
+    4)
+        echo "Starting AI/Tokens benchmark..."
+        echo ""
+        "$APPIMAGE_PATH" --ai --no-deps-check
+        BENCHMARK_RAN=1
+        ;;
+    5)
+        echo "Starting CPU benchmark..."
+        echo ""
+        "$APPIMAGE_PATH" --cpu --no-deps-check
+        BENCHMARK_RAN=1
+        ;;
+    6)
+        echo "Skipping benchmark. You can run it anytime with:"
+        echo "  $APPIMAGE_PATH"
+        BENCHMARK_RAN=0
+        ;;
+    *)
+        echo "Invalid choice. Skipping benchmark."
+        echo "You can run it anytime with:"
+        echo "  $APPIMAGE_PATH"
+        BENCHMARK_RAN=0
+        ;;
+esac
 
+if [ "$BENCHMARK_RAN" -eq 1 ]; then
     echo ""
     echo "Benchmark complete!"
     echo "Results saved to: $HOME/PiggyBankPC/results/"
@@ -319,10 +359,6 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "1. Go to https://piggybankpc.uk/submit"
     echo "2. Upload the .pbr file from results folder"
     echo "3. View your score on the leaderboard!"
-else
-    echo ""
-    echo "You can run the benchmark anytime by running:"
-    echo "  $APPIMAGE_PATH"
 fi
 
 echo ""
