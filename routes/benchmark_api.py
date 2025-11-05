@@ -104,17 +104,61 @@ class BenchmarkRunner:
     def _run_real_benchmark(self, appimage_path):
         """Actually run the AppImage and parse real results"""
         try:
-            # Map benchmark type to menu option (will be automated in future)
-            # For now, we'll run the full suite and parse the results
-            self.add_log('Running benchmark suite...', 'info')
+            # Map benchmark type to command-line argument
+            arg_map = {
+                'quick': '--quick',
+                'full': '--full',
+                'fps': '--fps',
+                'ai': '--ai',
+                'cpu': '--cpu'
+            }
+
+            arg = arg_map.get(self.type, '--quick')
+
+            self.add_log(f'Running benchmark: {arg}', 'info')
             self.add_log('This may take 15-90 minutes depending on benchmark type', 'info')
             self.progress = 15
 
-            # Note: The AppImage is interactive, so we can't easily automate menu selection
-            # For now, we'll tell the user to run it manually
-            self.add_log('NOTICE: Interactive benchmark requires manual execution', 'info')
-            self.add_log('Please run the AppImage manually from Desktop and submit results', 'info')
-            self.progress = 50
+            # Execute AppImage with argument
+            self.add_log(f'Executing: {appimage_path} {arg}', 'info')
+
+            self.process = subprocess.Popen(
+                [str(appimage_path), arg, '--no-deps-check'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1
+            )
+
+            # Monitor process output
+            self.progress = 20
+            while True:
+                if self.status == 'stopped':
+                    self.process.terminate()
+                    return
+
+                # Check if process is still running
+                retcode = self.process.poll()
+                if retcode is not None:
+                    # Process finished
+                    if retcode == 0:
+                        self.add_log('✓ Benchmark execution completed', 'success')
+                    else:
+                        self.add_log(f'Benchmark exited with code {retcode}', 'error')
+                    break
+
+                # Read output line by line
+                line = self.process.stdout.readline()
+                if line:
+                    self.add_log(line.strip(), 'info')
+
+                # Increment progress slowly
+                if self.progress < 90:
+                    self.progress += 1
+
+                time.sleep(0.5)
+
+            self.progress = 95
 
             # Check for existing results in ~/PiggyBankPC/results/
             home_dir = Path.home()
