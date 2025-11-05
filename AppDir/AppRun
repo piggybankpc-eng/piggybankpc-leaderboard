@@ -1,8 +1,8 @@
 #!/bin/bash
 # AppRun script for PiggyBankPC Benchmark
 
-SELF=$(readlink -f "$0")
-HERE=${SELF%/*}
+# Get directory without using readlink (which may not be available)
+HERE="$(cd "$(dirname "$0")" && pwd)"
 
 # Set up Python path
 export PYTHONPATH="${HERE}/usr/lib/python3/dist-packages:${HERE}/usr/lib:${PYTHONPATH}"
