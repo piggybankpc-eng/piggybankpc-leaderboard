@@ -71,14 +71,21 @@ class Submission(db.Model):
 
     # System Info
     cpu_model = db.Column(db.String(255))
+    cpu_cores = db.Column(db.Integer)
+    cpu_threads = db.Column(db.Integer)
+    cpu_clock_speed = db.Column(db.String(50))
     gpu_model = db.Column(db.String(255), index=True)
     gpu_price = db.Column(db.Float)
     ram_total = db.Column(db.String(50))
+    ram_type = db.Column(db.String(20))
+    ram_speed_mhz = db.Column(db.Integer)
 
     # Benchmark Results
     fps_avg = db.Column(db.Float, index=True)
     fps_min = db.Column(db.Float)
     fps_max = db.Column(db.Float)
+    fps_resolution = db.Column(db.String(50))
+    fps_quality = db.Column(db.String(50))
     ai_tokens_per_sec = db.Column(db.Float)
     cpu_score = db.Column(db.Float)
 
@@ -104,6 +111,14 @@ class Submission(db.Model):
     youtube_video_url = db.Column(db.String(500))  # YouTube video link for official builds
     build_name = db.Column(db.String(200))  # Optional custom name for official builds (e.g., "Budget Beast 2024")
     published = db.Column(db.Boolean, default=True, index=True)  # False = hidden until YouTube link added (anti-spoiler)
+
+    # Overclocking Detection (Phase 2)
+    cpu_overclocked = db.Column(db.Boolean)
+    cpu_overclock_percent = db.Column(db.Float)
+    ram_overclocked = db.Column(db.Boolean)
+    ram_overclock_percent = db.Column(db.Float)
+    cpu_stock_performance_estimate = db.Column(db.Float)
+    performance_gain_percent = db.Column(db.Float)
 
     @property
     def price_per_fps(self):
