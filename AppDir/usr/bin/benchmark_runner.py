@@ -55,7 +55,13 @@ class BenchmarkSuite:
         writable_dir = home_dir / "PiggyBankPC"
         self.hardware_detector = HardwareDetector(writable_dir)
         self.price_manager = GPUPriceManager(writable_dir)
-        self.fps_benchmark = FPSBenchmark(writable_dir, self.hardware_detector)
+
+        # Always enable interactive mode for FPS benchmark
+        # Heaven launches a GUI and doesn't need stdin interaction
+        # User interacts with Heaven GUI directly, not via terminal prompts
+        interactive = True
+
+        self.fps_benchmark = FPSBenchmark(writable_dir, self.hardware_detector, interactive=interactive)
         self.ai_benchmark = AIBenchmark(writable_dir, self.hardware_detector)
         self.cpu_benchmark = CPUBenchmark(writable_dir, self.hardware_detector)
         
@@ -191,12 +197,13 @@ class BenchmarkSuite:
         
         print("\nSelect benchmarks to run:")
         print("1. FPS Benchmark")
-        print("2. AI Token Benchmark")
-        print("3. CPU Benchmark")
-        print("4. All of above")
-        
-        choice = input("\nEnter your choice (1-4): ").strip()
-        
+        print("2. AI Token Benchmark (GPU)")
+        print("3. AI Token Benchmark (CPU)")
+        print("4. CPU Benchmark")
+        print("5. All of above")
+
+        choice = input("\nEnter your choice (1-5): ").strip()
+
         if choice == '1':
             fps_results = self.fps_benchmark.run_benchmark()
             self.all_results['fps'] = fps_results
@@ -204,13 +211,18 @@ class BenchmarkSuite:
             ai_results = self.ai_benchmark.run_benchmark()
             self.all_results['ai'] = ai_results
         elif choice == '3':
+            ai_cpu_results = self.ai_benchmark.run_ollama_cpu_benchmark()
+            self.all_results['ai_cpu'] = ai_cpu_results
+        elif choice == '4':
             cpu_results = self.cpu_benchmark.run_benchmark()
             self.all_results['cpu'] = cpu_results
-        elif choice == '4':
+        elif choice == '5':
             fps_results = self.fps_benchmark.run_benchmark()
             self.all_results['fps'] = fps_results
             ai_results = self.ai_benchmark.run_benchmark()
             self.all_results['ai'] = ai_results
+            ai_cpu_results = self.ai_benchmark.run_ollama_cpu_benchmark()
+            self.all_results['ai_cpu'] = ai_cpu_results
             cpu_results = self.cpu_benchmark.run_benchmark()
             self.all_results['cpu'] = cpu_results
         

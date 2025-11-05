@@ -167,20 +167,41 @@ Include details about CUDA cores, memory hierarchy, and typical use cases."""
 
             output_lines = []
             gpu_temps = []
+            gpu_utils = []
+            cpu_temps = []
+            cpu_utils = []
             vram_usage = []
 
             print("Generating tokens", end="", flush=True)
 
-            # Monitor output and GPU stats
+            # Monitor output and thermal stats
             for line in process.stdout:
                 output_lines.append(line)
                 print(".", end="", flush=True)
 
-                # Periodically check GPU stats
+                # Periodically check thermal stats
                 if len(output_lines) % 10 == 0 and self.hardware_detector:
-                    stats = self.hardware_detector.get_current_gpu_stats()
-                    if 'temperature' in stats:
-                        gpu_temps.append(stats['temperature'])
+                    # Get GPU stats
+                    gpu_stats = self.hardware_detector.get_current_gpu_stats()
+                    if 'temperature' in gpu_stats:
+                        gpu_temps.append(gpu_stats['temperature'])
+                    if 'gpu_utilization' in gpu_stats:
+                        util_str = gpu_stats['gpu_utilization'].replace('%', '').strip()
+                        try:
+                            gpu_utils.append(float(util_str))
+                        except ValueError:
+                            pass
+
+                    # Get CPU stats
+                    cpu_stats = self.hardware_detector.get_current_cpu_stats()
+                    if 'temperature' in cpu_stats:
+                        cpu_temps.append(cpu_stats['temperature'])
+                    if 'cpu_utilization' in cpu_stats:
+                        cpu_util_str = cpu_stats['cpu_utilization'].replace('%', '').strip()
+                        try:
+                            cpu_utils.append(float(cpu_util_str))
+                        except ValueError:
+                            pass
 
             process.wait()
             end_time = time.time()
@@ -206,6 +227,25 @@ Include details about CUDA cores, memory hierarchy, and typical use cases."""
                 if success:
                     vram_used = vram_output.strip()
 
+            # Prepare thermal metrics
+            thermal_metrics = {}
+            if gpu_temps:
+                thermal_metrics["gpu_temp_min"] = min(gpu_temps)
+                thermal_metrics["gpu_temp_avg"] = round(sum(gpu_temps) / len(gpu_temps), 1)
+                thermal_metrics["gpu_temp_max"] = max(gpu_temps)
+            if gpu_utils:
+                thermal_metrics["gpu_util_min"] = round(min(gpu_utils), 1)
+                thermal_metrics["gpu_util_avg"] = round(sum(gpu_utils) / len(gpu_utils), 1)
+                thermal_metrics["gpu_util_max"] = round(max(gpu_utils), 1)
+            if cpu_temps:
+                thermal_metrics["cpu_temp_min"] = min(cpu_temps)
+                thermal_metrics["cpu_temp_avg"] = round(sum(cpu_temps) / len(cpu_temps), 1)
+                thermal_metrics["cpu_temp_max"] = max(cpu_temps)
+            if cpu_utils:
+                thermal_metrics["cpu_util_min"] = round(min(cpu_utils), 1)
+                thermal_metrics["cpu_util_avg"] = round(sum(cpu_utils) / len(cpu_utils), 1)
+                thermal_metrics["cpu_util_max"] = round(max(cpu_utils), 1)
+
             results = {
                 "benchmark_type": "ollama",
                 "model": model_name,
@@ -216,6 +256,7 @@ Include details about CUDA cores, memory hierarchy, and typical use cases."""
                 "avg_gpu_temp": round(sum(gpu_temps) / len(gpu_temps), 1) if gpu_temps else "N/A",
                 "max_gpu_temp": max(gpu_temps) if gpu_temps else "N/A",
                 "vram_used": vram_used,
+                "thermal_metrics": thermal_metrics,
                 "timestamp": datetime.now().isoformat()
             }
 
@@ -234,6 +275,149 @@ Include details about CUDA cores, memory hierarchy, and typical use cases."""
             self.logger.error(f"Ollama benchmark failed: {str(e)}")
             return {
                 "benchmark_type": "ollama",
+                "status": "error",
+                "error": str(e)
+            }
+
+    def run_ollama_cpu_benchmark(self, model_name: str = "llama2:7b", num_tokens: int = 500) -> Dict:
+        """
+        Run AI inference benchmark using Ollama on CPU ONLY
+        Tests CPU token generation with thermal monitoring
+
+        Args:
+            model_name: Model to test
+            num_tokens: Target number of tokens to generate
+
+        Returns:
+            dict: Benchmark results with CPU thermal metrics
+        """
+        self.logger.info(f"Running Ollama CPU-only benchmark with {model_name}...")
+
+        if not self.check_ollama_installed():
+            return {
+                "benchmark_type": "ollama_cpu",
+                "status": "error",
+                "error": "Ollama not installed"
+            }
+
+        if not self.check_ollama_service():
+            return {
+                "benchmark_type": "ollama_cpu",
+                "status": "error",
+                "error": "Ollama service not running"
+            }
+
+        if not self.ensure_model_installed(model_name):
+            return {
+                "benchmark_type": "ollama_cpu",
+                "status": "skipped",
+                "reason": "Model not available"
+            }
+
+        try:
+            print(f"\n{'='*60}")
+            print("RUNNING AI TOKEN GENERATION BENCHMARK (CPU ONLY)")
+            print(f"Model: {model_name}")
+            print(f"Target tokens: {num_tokens}")
+            print(f"Backend: CPU (GPU disabled)")
+            print(f"{'='*60}\n")
+
+            # Prepare prompt
+            prompt = """Write a detailed technical explanation of how graphics processing units (GPUs)
+work, including their architecture, parallel processing capabilities, and differences from CPUs.
+Include details about CUDA cores, memory hierarchy, and typical use cases."""
+
+            # Run inference on CPU only (disable GPU)
+            import os
+            env = os.environ.copy()
+            env['CUDA_VISIBLE_DEVICES'] = ''  # Hide GPU from Ollama, force CPU
+
+            start_time = time.time()
+
+            process = subprocess.Popen(
+                ["ollama", "run", model_name, prompt],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                env=env
+            )
+
+            output_lines = []
+            cpu_temps = []
+            cpu_utils = []
+
+            print("Generating tokens on CPU", end="", flush=True)
+
+            # Monitor output and CPU stats
+            for line in process.stdout:
+                output_lines.append(line)
+                print(".", end="", flush=True)
+
+                # Periodically check CPU stats
+                if len(output_lines) % 10 == 0 and self.hardware_detector:
+                    cpu_stats = self.hardware_detector.get_current_cpu_stats()
+                    if 'temperature' in cpu_stats:
+                        cpu_temps.append(cpu_stats['temperature'])
+                    if 'cpu_utilization' in cpu_stats:
+                        cpu_util_str = cpu_stats['cpu_utilization'].replace('%', '').strip()
+                        try:
+                            cpu_utils.append(float(cpu_util_str))
+                        except ValueError:
+                            pass
+
+            process.wait()
+            end_time = time.time()
+
+            print("\n\nGeneration completed!")
+
+            # Calculate metrics
+            full_output = "".join(output_lines)
+            duration = end_time - start_time
+
+            # Estimate token count (rough approximation: ~4 chars per token)
+            estimated_tokens = len(full_output) // 4
+            tokens_per_second = estimated_tokens / duration if duration > 0 else 0
+
+            # Prepare thermal metrics
+            thermal_metrics = {}
+            if cpu_temps:
+                thermal_metrics["cpu_temp_min"] = min(cpu_temps)
+                thermal_metrics["cpu_temp_avg"] = round(sum(cpu_temps) / len(cpu_temps), 1)
+                thermal_metrics["cpu_temp_max"] = max(cpu_temps)
+            if cpu_utils:
+                thermal_metrics["cpu_util_min"] = round(min(cpu_utils), 1)
+                thermal_metrics["cpu_util_avg"] = round(sum(cpu_utils) / len(cpu_utils), 1)
+                thermal_metrics["cpu_util_max"] = round(max(cpu_utils), 1)
+
+            results = {
+                "benchmark_type": "ollama_cpu",
+                "model": model_name,
+                "status": "completed",
+                "tokens_generated": estimated_tokens,
+                "duration_seconds": round(duration, 2),
+                "tokens_per_second": round(tokens_per_second, 2),
+                "backend": "CPU",
+                "avg_cpu_temp": round(sum(cpu_temps) / len(cpu_temps), 1) if cpu_temps else "N/A",
+                "max_cpu_temp": max(cpu_temps) if cpu_temps else "N/A",
+                "thermal_metrics": thermal_metrics,
+                "timestamp": datetime.now().isoformat()
+            }
+
+            self._save_results(results)
+
+            return results
+
+        except subprocess.TimeoutExpired:
+            self.logger.error("Ollama CPU benchmark timed out")
+            return {
+                "benchmark_type": "ollama_cpu",
+                "status": "error",
+                "error": "Benchmark timed out"
+            }
+        except Exception as e:
+            self.logger.error(f"Ollama CPU benchmark failed: {str(e)}")
+            return {
+                "benchmark_type": "ollama_cpu",
                 "status": "error",
                 "error": str(e)
             }
