@@ -5,6 +5,7 @@ Measures gaming performance and GPU capabilities
 """
 
 import subprocess
+import sys
 import time
 import logging
 import json
@@ -140,10 +141,14 @@ class FPSBenchmark:
         print("3. When done, click 'Benchmark' to save results")
         print("4. Close Heaven")
         print("5. We'll read your results automatically!")
-        print("6. Get suggestions for next test or skip ahead")
+        print("6. Repeat for different settings or close to continue")
         print(f"{'='*70}\n")
 
-        input("Press ENTER to start...")
+        # Check if stdin is available for user prompts
+        has_stdin = sys.stdin.isatty() if hasattr(sys.stdin, 'isatty') else False
+
+        if has_stdin:
+            input("Press ENTER to start...")
 
         all_results = {}
         test_number = 1
@@ -176,17 +181,22 @@ class FPSBenchmark:
                 if suggestion:
                     print(f"\n{suggestion}")
 
-            # Ask what to do next
-            print(f"\n{'='*70}")
-            print("What would you like to do?")
-            print("1. Run another test")
-            print("2. Finish FPS testing and move to AI/CPU benchmarks")
-            choice = input("\nChoice (1-2): ").strip()
+            # Ask what to do next (only if stdin available)
+            if has_stdin:
+                print(f"\n{'='*70}")
+                print("What would you like to do?")
+                print("1. Run another test")
+                print("2. Finish FPS testing and move to AI/CPU benchmarks")
+                choice = input("\nChoice (1-2): ").strip()
 
-            if choice == "2":
+                if choice == "2":
+                    break
+
+                test_number += 1
+            else:
+                # Non-interactive mode: run once and finish
+                print("\n✓ Heaven benchmark complete, moving to next benchmark...")
                 break
-
-            test_number += 1
 
         return {
             "benchmark_type": "unigine_heaven_interactive",

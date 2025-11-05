@@ -56,8 +56,10 @@ class BenchmarkSuite:
         self.hardware_detector = HardwareDetector(writable_dir)
         self.price_manager = GPUPriceManager(writable_dir)
 
-        # Detect if running interactively (has stdin/TTY)
-        interactive = sys.stdin.isatty() if hasattr(sys.stdin, 'isatty') else False
+        # Always enable interactive mode for FPS benchmark
+        # Heaven launches a GUI and doesn't need stdin interaction
+        # User interacts with Heaven GUI directly, not via terminal prompts
+        interactive = True
 
         self.fps_benchmark = FPSBenchmark(writable_dir, self.hardware_detector, interactive=interactive)
         self.ai_benchmark = AIBenchmark(writable_dir, self.hardware_detector)
