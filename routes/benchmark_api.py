@@ -140,27 +140,16 @@ class BenchmarkRunner:
                 self.add_log('Making AppImage executable...', 'info')
                 os.chmod(appimage_path, 0o755)
 
-            # Try to execute AppImage with --appimage-extract-and-run if FUSE fails
-            try:
-                self.process = subprocess.Popen(
-                    [str(appimage_path), arg, '--no-deps-check'],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    bufsize=1,
-                    env=os.environ.copy()
-                )
-            except Exception as e:
-                # Fallback: Try extracting and running
-                self.add_log(f'Direct execution failed, trying extract method: {str(e)}', 'info')
-                self.process = subprocess.Popen(
-                    [str(appimage_path), '--appimage-extract-and-run', arg, '--no-deps-check'],
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    bufsize=1,
-                    env=os.environ.copy()
-                )
+            # Use --appimage-extract-and-run by default (FUSE often not available in web environments)
+            self.add_log('Executing benchmark with extract-and-run method...', 'info')
+            self.process = subprocess.Popen(
+                [str(appimage_path), '--appimage-extract-and-run', arg, '--no-deps-check'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                env=os.environ.copy()
+            )
 
             # Monitor process output
             self.progress = 20
