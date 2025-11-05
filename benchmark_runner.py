@@ -55,7 +55,11 @@ class BenchmarkSuite:
         writable_dir = home_dir / "PiggyBankPC"
         self.hardware_detector = HardwareDetector(writable_dir)
         self.price_manager = GPUPriceManager(writable_dir)
-        self.fps_benchmark = FPSBenchmark(writable_dir, self.hardware_detector)
+
+        # Detect if running interactively (has stdin/TTY)
+        interactive = sys.stdin.isatty() if hasattr(sys.stdin, 'isatty') else False
+
+        self.fps_benchmark = FPSBenchmark(writable_dir, self.hardware_detector, interactive=interactive)
         self.ai_benchmark = AIBenchmark(writable_dir, self.hardware_detector)
         self.cpu_benchmark = CPUBenchmark(writable_dir, self.hardware_detector)
         

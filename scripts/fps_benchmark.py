@@ -18,12 +18,13 @@ from typing import Dict, Optional
 class FPSBenchmark:
     """Runs FPS benchmarks using Unigine Heaven or fallback tools"""
 
-    def __init__(self, base_dir, hardware_detector=None):
+    def __init__(self, base_dir, hardware_detector=None, interactive=True):
         self.base_dir = Path(base_dir)
         self.results_dir = self.base_dir / "results"
         self.results_dir.mkdir(exist_ok=True)
         self.logger = logging.getLogger("FPSBenchmark")
         self.hardware_detector = hardware_detector
+        self.interactive = interactive  # If False, skip all input() prompts
 
     def check_unigine_installed(self) -> bool:
         """
@@ -834,6 +835,11 @@ class FPSBenchmark:
         Returns:
             dict: Benchmark results
         """
+        # Force fallback if non-interactive (no stdin available for input())
+        if not self.interactive:
+            self.logger.info("Running in non-interactive mode - using synthetic benchmark")
+            return self.run_synthetic_benchmark(duration)
+
         if not force_fallback and self.check_unigine_installed():
             return self.run_unigine_heaven(duration)
         else:
