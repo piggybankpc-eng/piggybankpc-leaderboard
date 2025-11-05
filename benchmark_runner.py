@@ -456,7 +456,9 @@ Examples:
     parser.add_argument('--fps', action='store_true',
                         help='Run FPS benchmark only')
     parser.add_argument('--ai', action='store_true',
-                        help='Run AI token benchmark only')
+                        help='Run AI token benchmark only (GPU)')
+    parser.add_argument('--ai-cpu', action='store_true',
+                        help='Run AI token benchmark on CPU only')
     parser.add_argument('--cpu', action='store_true',
                         help='Run CPU benchmark only')
     parser.add_argument('--no-deps-check', action='store_true',
@@ -467,7 +469,7 @@ Examples:
     suite = BenchmarkSuite()
 
     # Non-interactive mode - run specified benchmark and exit
-    if args.quick or args.full or args.fps or args.ai or args.cpu:
+    if args.quick or args.full or args.fps or args.ai or args.ai_cpu or args.cpu:
         suite.display_header()
 
         # Check dependencies unless skipped
@@ -498,6 +500,16 @@ Examples:
             system_info = suite.detect_system()
             ai_results = suite.ai_benchmark.run_benchmark()
             suite.all_results['ai'] = ai_results
+            suite.all_results['system_info'] = system_info
+            suite._display_results()
+            suite._export_results()
+        elif args.ai_cpu:
+            print("\n" + "="*70)
+            print("AI BENCHMARK (CPU ONLY)")
+            print("="*70)
+            system_info = suite.detect_system()
+            ai_cpu_results = suite.ai_benchmark.run_ollama_cpu_benchmark()
+            suite.all_results['ai_cpu'] = ai_cpu_results
             suite.all_results['system_info'] = system_info
             suite._display_results()
             suite._export_results()

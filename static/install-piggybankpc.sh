@@ -368,11 +368,12 @@ echo "Select Benchmark Type:"
 echo "  1. Quick (FPS only, ~15 min)"
 echo "  2. Full (FPS + AI + CPU, ~90 min)"
 echo "  3. FPS only"
-echo "  4. AI/Tokens only"
-echo "  5. CPU only"
-echo "  6. Skip (run later manually)"
+echo "  4. AI/Tokens (GPU)"
+echo "  5. AI/Tokens (CPU only)"
+echo "  6. CPU only"
+echo "  7. Skip (run later manually)"
 echo ""
-read -p "Choice (1-6): " BENCHMARK_CHOICE
+read -p "Choice (1-7): " BENCHMARK_CHOICE
 echo ""
 
 case $BENCHMARK_CHOICE in
@@ -395,18 +396,24 @@ case $BENCHMARK_CHOICE in
         BENCHMARK_RAN=1
         ;;
     4)
-        echo "Starting AI/Tokens benchmark..."
+        echo "Starting AI/Tokens benchmark (GPU)..."
         echo ""
         "$APPIMAGE_PATH" --ai --no-deps-check
         BENCHMARK_RAN=1
         ;;
     5)
+        echo "Starting AI/Tokens benchmark (CPU only)..."
+        echo ""
+        "$APPIMAGE_PATH" --ai-cpu --no-deps-check
+        BENCHMARK_RAN=1
+        ;;
+    6)
         echo "Starting CPU benchmark..."
         echo ""
         "$APPIMAGE_PATH" --cpu --no-deps-check
         BENCHMARK_RAN=1
         ;;
-    6)
+    7)
         echo "Skipping benchmark. You can run it anytime with:"
         echo "  $APPIMAGE_PATH"
         BENCHMARK_RAN=0
