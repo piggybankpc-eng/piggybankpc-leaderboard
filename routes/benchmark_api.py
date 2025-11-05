@@ -113,6 +113,53 @@ class BenchmarkRunner:
             self.status = 'error'
             self.add_log(f'Error: {self.error}', 'error')
 
+    def _detect_hardware_for_benchmark(self):
+        """Detect hardware on host system before launching AppImage"""
+        hardware_info = {
+            'cpu': {},
+            'gpu': {},
+            'ram': {}
+        }
+
+        # Detect CPU
+        try:
+            result = subprocess.run(['lscpu'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                for line in result.stdout.split('\n'):
+                    if 'Model name:' in line:
+                        hardware_info['cpu']['model'] = line.split(':', 1)[1].strip()
+                    elif 'CPU MHz:' in line:
+                        hardware_info['cpu']['speed'] = line.split(':', 1)[1].strip() + ' MHz'
+                    elif 'CPU(s):' in line and 'On-line' not in line:
+                        hardware_info['cpu']['cores'] = line.split(':', 1)[1].strip()
+        except Exception as e:
+            hardware_info['cpu'] = {'model': 'Unknown', 'error': str(e)}
+
+        # Detect GPU
+        try:
+            result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+                                  capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                hardware_info['gpu']['model'] = result.stdout.strip()
+            else:
+                hardware_info['gpu']['model'] = 'Unknown'
+        except Exception as e:
+            hardware_info['gpu'] = {'model': 'Unknown', 'error': str(e)}
+
+        # Detect RAM
+        try:
+            result = subprocess.run(['free', '-h'], capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                for line in result.stdout.split('\n'):
+                    if line.startswith('Mem:'):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            hardware_info['ram']['total'] = parts[1]
+        except Exception as e:
+            hardware_info['ram'] = {'total': 'Unknown', 'error': str(e)}
+
+        return hardware_info
+
     def _run_real_benchmark(self, appimage_path):
         """Actually run the AppImage and parse real results"""
         try:
@@ -131,6 +178,18 @@ class BenchmarkRunner:
             self.add_log('This may take 15-90 minutes depending on benchmark type', 'info')
             self.progress = 15
 
+            # PRE-DETECT HARDWARE before launching AppImage
+            self.add_log('Pre-detecting system hardware...', 'info')
+            hardware_info = self._detect_hardware_for_benchmark()
+
+            # Save to temp JSON file
+            import tempfile
+            import json
+            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+            json.dump(hardware_info, temp_file, indent=2)
+            temp_file.close()
+            self.add_log(f'✓ Hardware pre-detected: CPU={hardware_info["cpu"]["model"][:30]}, GPU={hardware_info["gpu"]["model"][:30]}', 'success')
+
             # Execute AppImage with argument
             self.add_log(f'Executing: {appimage_path} {arg}', 'info')
 
@@ -142,13 +201,18 @@ class BenchmarkRunner:
 
             # Use --appimage-extract-and-run by default (FUSE often not available in web environments)
             self.add_log('Executing benchmark with extract-and-run method...', 'info')
+
+            # Pass pre-detected hardware info via environment variable
+            env = os.environ.copy()
+            env['PIGGYBANKPC_HARDWARE_INFO'] = temp_file.name
+
             self.process = subprocess.Popen(
                 [str(appimage_path), '--appimage-extract-and-run', arg, '--no-deps-check'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
                 bufsize=1,
-                env=os.environ.copy()
+                env=env
             )
 
             # Monitor process output
