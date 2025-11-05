@@ -154,7 +154,8 @@
                 </thead>
                 <tbody>
                     {% for sub in submissions %}
-                    <tr>
+                    <tr data-bs-toggle="collapse" data-bs-target="#details-{{ sub.id }}"
+                        style="cursor: pointer;" class="table-row-clickable">
                         <td>
                             {% set rank = (pagination.page - 1) * 20 + loop.index %}
                             {% if rank == 1 %}
@@ -168,7 +169,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}">
+                            <a href="{{ url_for('profile.view_profile', username=sub.user.username) }}" onclick="event.stopPropagation();">
                                 <i class="fas fa-user"></i> {{ sub.user.username }}
                             </a>
                             {% if sub.is_official %}
@@ -177,7 +178,7 @@
                                 </span>
                             {% endif %}
                             {% if sub.youtube_video_url %}
-                                <a href="{{ sub.youtube_video_url }}" target="_blank" class="ms-1" title="Watch build video">
+                                <a href="{{ sub.youtube_video_url }}" target="_blank" class="ms-1" title="Watch build video" onclick="event.stopPropagation();">
                                     <i class="fab fa-youtube text-danger"></i>
                                 </a>
                             {% endif %}
@@ -213,6 +214,63 @@
                         </td>
                         <td class="text-muted">
                             <small>{{ sub.submission_date|relative_time }}</small>
+                            <i class="fas fa-chevron-down ms-2 text-primary"></i>
+                        </td>
+                    </tr>
+                    <!-- Expandable Details Row -->
+                    <tr class="collapse" id="details-{{ sub.id }}">
+                        <td colspan="10" class="bg-light">
+                            <div class="p-3">
+                                <h6 class="mb-3"><i class="fas fa-info-circle text-primary"></i> Detailed System Information</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6 class="text-muted"><i class="fas fa-microchip"></i> CPU Details</h6>
+                                        <ul class="list-unstyled small">
+                                            <li><strong>Model:</strong> {{ sub.cpu_model }}</li>
+                                            {% if sub.cpu_cores or sub.cpu_threads %}
+                                            <li><strong>Cores/Threads:</strong>
+                                                {% if sub.cpu_cores and sub.cpu_threads %}
+                                                    {{ sub.cpu_cores }} cores / {{ sub.cpu_threads }} threads
+                                                {% elif sub.cpu_cores %}
+                                                    {{ sub.cpu_cores }} cores
+                                                {% elif sub.cpu_threads %}
+                                                    {{ sub.cpu_threads }} threads
+                                                {% endif %}
+                                            </li>
+                                            {% endif %}
+                                            {% if sub.cpu_clock_speed %}
+                                            <li><strong>Clock Speed:</strong> {{ sub.cpu_clock_speed }}</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-muted"><i class="fas fa-memory"></i> RAM Details</h6>
+                                        <ul class="list-unstyled small">
+                                            <li><strong>Capacity:</strong> {{ sub.ram_total }}</li>
+                                            {% if sub.ram_speed_mhz %}
+                                            <li><strong>Speed:</strong> {{ sub.ram_speed_mhz }} MHz</li>
+                                            {% endif %}
+                                            {% if sub.ram_type %}
+                                            <li><strong>Type:</strong> {{ sub.ram_type }}</li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-muted"><i class="fas fa-gamepad"></i> GPU Test Settings</h6>
+                                        <ul class="list-unstyled small">
+                                            {% if sub.fps_resolution %}
+                                            <li><strong>Resolution:</strong> {{ sub.fps_resolution }}</li>
+                                            {% endif %}
+                                            {% if sub.fps_quality %}
+                                            <li><strong>Quality:</strong> {{ sub.fps_quality }}</li>
+                                            {% endif %}
+                                            <li><strong>Average FPS:</strong> {{ sub.fps_avg|round(1) }}</li>
+                                            <li><strong>Min FPS:</strong> {{ sub.fps_min|round(1) }}</li>
+                                            <li><strong>Max FPS:</strong> {{ sub.fps_max|round(1) }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

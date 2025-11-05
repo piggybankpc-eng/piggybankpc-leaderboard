@@ -43,12 +43,50 @@ def extract_submission_data(validated_results):
         gpu = system_info.get('gpu', {})
         ram = system_info.get('ram', {})
 
+        # Extract CPU details
+        cpu_cores = cpu.get('cores')
+        cpu_threads = cpu.get('threads')
+        cpu_max_mhz = cpu.get('max_mhz', '')
+
+        # Format CPU clock speed nicely
+        cpu_clock_speed = None
+        if cpu_max_mhz:
+            try:
+                # Convert MHz to GHz if available
+                mhz_value = float(cpu_max_mhz)
+                if mhz_value >= 1000:
+                    cpu_clock_speed = f"{mhz_value / 1000:.2f} GHz"
+                else:
+                    cpu_clock_speed = f"{mhz_value} MHz"
+            except (ValueError, TypeError):
+                cpu_clock_speed = str(cpu_max_mhz)
+
+        # Extract RAM details
+        ram_type = ram.get('type')
+        ram_speed = ram.get('speed', '')
+
+        # Parse RAM speed from "2666 MT/s" format
+        ram_speed_mhz = None
+        if ram_speed and isinstance(ram_speed, str):
+            try:
+                # Extract numeric value from "2666 MT/s" format
+                speed_parts = ram_speed.split()
+                if speed_parts:
+                    ram_speed_mhz = int(speed_parts[0])
+            except (ValueError, IndexError):
+                pass
+
         data = {
             'hardware_fingerprint': validated_results.get('hardware_fingerprint', ''),
             'cpu_model': cpu.get('model', 'Unknown'),
+            'cpu_cores': cpu_cores,
+            'cpu_threads': cpu_threads,
+            'cpu_clock_speed': cpu_clock_speed,
             'gpu_model': gpu.get('model', 'Unknown'),
             'gpu_price': system_info.get('gpu_price', 0.0),
             'ram_total': ram.get('total', 'Unknown'),
+            'ram_type': ram_type,
+            'ram_speed_mhz': ram_speed_mhz,
             'benchmark_version': validated_results.get('version', '1.0.0'),
             'benchmark_timestamp': validated_results.get('timestamp', '')
         }
