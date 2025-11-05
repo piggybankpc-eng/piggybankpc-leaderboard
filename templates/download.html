@@ -65,12 +65,6 @@ chmod +x install.sh
                 </div>
             </div>
 
-            <div class="text-center mb-3">
-                <p class="text-muted">
-                    <strong>OR</strong> download the AppImage manually:
-                </p>
-            </div>
-
             <script>
             function copyCommand(elementId) {
                 var element = document.getElementById(elementId);
@@ -91,87 +85,39 @@ chmod +x install.sh
             }
             </script>
 
-            <!-- Download Card -->
-            <div class="card shadow-lg mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-file-earmark-zip"></i> PiggyBankPC Benchmark Suite
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="alert alert-info">
-                        <h5><i class="bi bi-info-circle"></i> What's Included?</h5>
-                        <ul class="mb-0">
-                            <li><strong>Gaming FPS Benchmark</strong> - Test real-world gaming performance</li>
-                            <li><strong>AI/LLM Benchmark</strong> - Measure tokens per second for AI workloads</li>
-                            <li><strong>CPU Benchmark</strong> - Comprehensive CPU performance testing</li>
-                            <li><strong>GPU Diagnostics</strong> - Automatic issue detection & optimization tips</li>
-                            <li><strong>Encrypted Results</strong> - Tamper-proof .pbr file generation</li>
-                        </ul>
-                    </div>
-
-                    <!-- Download Button -->
-                    <div class="d-grid gap-2 my-4">
-                        <a href="https://github.com/piggybankpc-eng/piggybankpc-leaderboard/releases/latest/download/PiggyBankPC-Benchmark.AppImage"
-                           class="btn btn-primary btn-lg"
-                           target="_blank">
-                            <i class="bi bi-download"></i> Download AppImage for Linux
-                        </a>
-                        <a href="https://github.com/piggybankpc-eng/piggybankpc-leaderboard/releases"
-                           class="btn btn-outline-secondary"
-                           target="_blank">
-                            <i class="bi bi-clock-history"></i> View All Versions
-                        </a>
-                    </div>
-
-                    <!-- System Requirements -->
-                    <div class="alert alert-warning">
-                        <h6><i class="bi bi-exclamation-triangle"></i> System Requirements</h6>
-                        <ul class="mb-0 small">
-                            <li><strong>OS:</strong> Ubuntu 22.04+ or compatible Linux distribution</li>
-                            <li><strong>GPU:</strong> NVIDIA GPU required (for AI benchmarks)</li>
-                            <li><strong>RAM:</strong> 8GB minimum, 16GB recommended</li>
-                            <li><strong>Storage:</strong> 2GB free space</li>
-                            <li><strong>Internet:</strong> Required for result submission</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Installation Instructions -->
+            <!-- What's Included -->
             <div class="card shadow mb-4">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="bi bi-terminal"></i> Installation Instructions
+                        <i class="bi bi-info-circle"></i> What's Included?
                     </h5>
                 </div>
                 <div class="card-body">
-                    <ol>
-                        <li class="mb-3">
-                            <strong>Download the AppImage</strong>
-                            <p class="text-muted mb-0">Click the download button above to get the AppImage file</p>
-                        </li>
-                        <li class="mb-3">
-                            <strong>Make it executable</strong>
-                            <div class="bg-dark text-white p-3 rounded mt-2">
-                                <code>chmod +x PiggyBankPC-Benchmark.AppImage</code>
-                            </div>
-                        </li>
-                        <li class="mb-3">
-                            <strong>Run the benchmark</strong>
-                            <div class="bg-dark text-white p-3 rounded mt-2">
-                                <code>./PiggyBankPC-Benchmark.AppImage</code>
-                            </div>
-                        </li>
-                        <li class="mb-3">
-                            <strong>Wait for completion</strong>
-                            <p class="text-muted mb-0">The benchmark will run all tests automatically (5-15 minutes)</p>
-                        </li>
-                        <li class="mb-0">
-                            <strong>Submit results</strong>
-                            <p class="text-muted mb-0">Upload the generated .pbr file on the <a href="{{ url_for('submit.submit') }}">Submit page</a></p>
-                        </li>
-                    </ol>
+                    <ul class="mb-0">
+                        <li><strong>Gaming FPS Benchmark</strong> - Test real-world gaming performance using Unigine Heaven</li>
+                        <li><strong>AI/LLM Benchmark</strong> - Measure tokens per second for AI workloads using Ollama</li>
+                        <li><strong>CPU Benchmark</strong> - Comprehensive CPU performance testing using Sysbench</li>
+                        <li><strong>GPU Diagnostics</strong> - Automatic hardware detection with nvidia-smi</li>
+                        <li><strong>Encrypted Results</strong> - Tamper-proof .pbr file generation for leaderboard submission</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- System Requirements -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> System Requirements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>OS:</strong> Ubuntu 22.04+ or compatible Linux distribution</li>
+                        <li><strong>GPU:</strong> NVIDIA GPU with working drivers (nvidia-smi functional)</li>
+                        <li><strong>RAM:</strong> 8GB minimum, 16GB recommended</li>
+                        <li><strong>Storage:</strong> 5GB free space (for Unigine Heaven and Ollama downloads)</li>
+                        <li><strong>Internet:</strong> Required for downloading dependencies and result submission</li>
+                    </ul>
                 </div>
             </div>
 
