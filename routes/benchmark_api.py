@@ -62,14 +62,32 @@ class BenchmarkRunner:
                     break
 
             if not appimage_path:
-                self.error = "AppImage not found in any location"
-                self.status = 'error'
-                self.add_log('ERROR: AppImage not found', 'error')
-                self.add_log('Searched locations:', 'error')
-                for loc in search_locations:
-                    self.add_log(f'  - {loc}', 'error')
-                self.add_log('Please download the AppImage first or place it in ~/Desktop/', 'error')
-                return
+                self.add_log('AppImage not found, downloading latest version...', 'info')
+                self.progress = 5
+
+                # Download from GitHub
+                download_url = "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage"
+                download_path = home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage"
+
+                try:
+                    import urllib.request
+                    self.add_log(f'Downloading from: {download_url}', 'info')
+                    urllib.request.urlretrieve(download_url, download_path)
+
+                    # Make executable
+                    import os
+                    os.chmod(download_path, 0o755)
+
+                    appimage_path = download_path
+                    self.add_log('✓ Download complete!', 'success')
+                    self.progress = 10
+
+                except Exception as e:
+                    self.error = f"Failed to download AppImage: {str(e)}"
+                    self.status = 'error'
+                    self.add_log(f'ERROR: {self.error}', 'error')
+                    self.add_log('Please download manually from GitHub', 'error')
+                    return
 
             # Run benchmark based on type
             self.progress = 10
