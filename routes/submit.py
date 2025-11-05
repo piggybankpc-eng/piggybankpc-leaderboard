@@ -55,9 +55,29 @@ def extract_submission_data(validated_results):
 
         # Extract FPS benchmark results
         if fps_data.get('status') == 'completed':
-            data['fps_avg'] = fps_data.get('average_fps', 0.0)
-            data['fps_min'] = fps_data.get('min_fps', 0.0)
-            data['fps_max'] = fps_data.get('max_fps', 0.0)
+            # Handle new Heaven interactive format with configurations
+            if 'configurations' in fps_data and fps_data['configurations']:
+                # Get first configuration (or highest FPS if multiple)
+                configs = fps_data['configurations']
+                best_config = None
+                best_fps = 0
+
+                for config_name, config_data in configs.items():
+                    if config_data.get('average_fps', 0) > best_fps:
+                        best_fps = config_data.get('average_fps', 0)
+                        best_config = config_data
+
+                if best_config:
+                    data['fps_avg'] = best_config.get('average_fps', 0.0)
+                    data['fps_min'] = best_config.get('min_fps', 0.0)
+                    data['fps_max'] = best_config.get('max_fps', 0.0)
+                    data['fps_resolution'] = best_config.get('resolution', '')
+                    data['fps_quality'] = best_config.get('quality', '')
+            else:
+                # Fallback to old format
+                data['fps_avg'] = fps_data.get('average_fps', 0.0)
+                data['fps_min'] = fps_data.get('min_fps', 0.0)
+                data['fps_max'] = fps_data.get('max_fps', 0.0)
 
         # Phase 2: Extract GPU metrics for diagnostic analysis
         gpu_metrics = fps_data.get('gpu_metrics', {})
