@@ -29,9 +29,9 @@ def _detect_system_hardware():
         'ram': {}
     }
 
-    # Detect CPU
+    # Detect CPU - use full path
     try:
-        result = subprocess.run(['lscpu'], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(['/usr/bin/lscpu'], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             for line in result.stdout.split('\n'):
                 if 'Model name:' in line:
@@ -46,9 +46,9 @@ def _detect_system_hardware():
     except Exception as e:
         hardware_info['cpu'] = {'model': 'Unknown', 'detected': False, 'error': str(e)}
 
-    # Detect GPU
+    # Detect GPU - use full path
     try:
-        result = subprocess.run(['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+        result = subprocess.run(['/usr/bin/nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
                               capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             hardware_info['gpu']['model'] = result.stdout.strip()
@@ -58,9 +58,9 @@ def _detect_system_hardware():
     except Exception as e:
         hardware_info['gpu'] = {'model': 'Unknown', 'detected': False, 'error': str(e)}
 
-    # Detect RAM
+    # Detect RAM - use full path
     try:
-        result = subprocess.run(['free', '-h'], capture_output=True, text=True, timeout=5)
+        result = subprocess.run(['/usr/bin/free', '-h'], capture_output=True, text=True, timeout=5)
         if result.returncode == 0:
             for line in result.stdout.split('\n'):
                 if line.startswith('Mem:'):
