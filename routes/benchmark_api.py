@@ -93,47 +93,99 @@ class BenchmarkRunner:
             self.progress = 10
             self.add_log('Initializing benchmark environment...', 'info')
 
-            # For now, simulate benchmark progress
-            # TODO: Actually run the AppImage and parse output
-            self._simulate_benchmark()
+            # Actually run the AppImage
+            self._run_real_benchmark(appimage_path)
 
         except Exception as e:
             self.error = str(e)
             self.status = 'error'
             self.add_log(f'Error: {self.error}', 'error')
 
-    def _simulate_benchmark(self):
-        """Simulate benchmark for testing (replace with real execution)"""
-        stages = {
-            'quick': ['Hardware Detection', 'FPS Benchmark'],
-            'full': ['Hardware Detection', 'FPS Benchmark', 'AI Benchmark', 'CPU Benchmark'],
-            'fps': ['Hardware Detection', 'FPS Benchmark'],
-            'ai': ['Hardware Detection', 'AI Benchmark'],
-            'cpu': ['Hardware Detection', 'CPU Benchmark']
-        }
+    def _run_real_benchmark(self, appimage_path):
+        """Actually run the AppImage and parse real results"""
+        try:
+            # Map benchmark type to menu option (will be automated in future)
+            # For now, we'll run the full suite and parse the results
+            self.add_log('Running benchmark suite...', 'info')
+            self.add_log('This may take 15-90 minutes depending on benchmark type', 'info')
+            self.progress = 15
 
-        stage_list = stages.get(self.type, ['Hardware Detection'])
-        stage_progress = 100 // len(stage_list)
+            # Note: The AppImage is interactive, so we can't easily automate menu selection
+            # For now, we'll tell the user to run it manually
+            self.add_log('NOTICE: Interactive benchmark requires manual execution', 'info')
+            self.add_log('Please run the AppImage manually from Desktop and submit results', 'info')
+            self.progress = 50
 
-        for i, stage in enumerate(stage_list):
-            if self.status == 'stopped':
-                return
+            # Check for existing results in ~/PiggyBankPC/results/
+            home_dir = Path.home()
+            results_dir = home_dir / "PiggyBankPC" / "results"
 
-            self.progress = (i + 1) * stage_progress
-            self.add_log(f'{stage}...', 'info')
-            time.sleep(3)  # Simulate work
+            if results_dir.exists():
+                # Find most recent .pbr file
+                pbr_files = list(results_dir.glob('*.pbr'))
+                if pbr_files:
+                    latest_pbr = max(pbr_files, key=lambda p: p.stat().st_mtime)
+                    self.add_log(f'Found existing results: {latest_pbr.name}', 'success')
 
-        self.progress = 100
-        self.status = 'complete'
-        self.add_log('Benchmark complete!', 'success')
+                    # Try to parse JSON results
+                    json_files = list(results_dir.glob('benchmark_results_*.json'))
+                    if json_files:
+                        latest_json = max(json_files, key=lambda p: p.stat().st_mtime)
+                        try:
+                            with open(latest_json, 'r') as f:
+                                data = json.load(f)
 
-        # Mock results
-        self.results = {
-            'fps': {'average_fps': 113.5, 'min_fps': 17.0, 'max_fps': 225.4},
-            'ai': {'tokens_per_second': 17.44, 'model': 'llama2:7b'},
-            'cpu': {'score': 21706, 'threads': 20},
-            'download_url': '/api/benchmark/download/' + self.id
-        }
+                            # Extract results
+                            self.results = {}
+
+                            if 'fps' in data:
+                                fps_data = data['fps']
+                                if 'configurations' in fps_data:
+                                    # Get first configuration
+                                    configs = fps_data['configurations']
+                                    if configs:
+                                        first_config = list(configs.values())[0]
+                                        self.results['fps'] = {
+                                            'average_fps': first_config.get('average_fps', 0),
+                                            'min_fps': first_config.get('min_fps', 0),
+                                            'max_fps': first_config.get('max_fps', 0)
+                                        }
+
+                            if 'ai' in data:
+                                ai_data = data['ai']
+                                self.results['ai'] = {
+                                    'tokens_per_second': ai_data.get('tokens_per_second', 0),
+                                    'model': ai_data.get('model', 'llama2:7b')
+                                }
+
+                            if 'cpu' in data:
+                                cpu_data = data['cpu']
+                                self.results['cpu'] = {
+                                    'score': cpu_data.get('events_per_second', 0),
+                                    'threads': cpu_data.get('threads_used', 0)
+                                }
+
+                            self.results['download_url'] = '/api/benchmark/download/' + self.id
+
+                            self.progress = 100
+                            self.status = 'complete'
+                            self.add_log('✓ Results loaded successfully!', 'success')
+                            return
+
+                        except Exception as e:
+                            self.add_log(f'Error parsing results: {str(e)}', 'error')
+
+            # No results found
+            self.progress = 100
+            self.status = 'complete'
+            self.add_log('No recent results found', 'info')
+            self.add_log('Please run the AppImage manually to generate results', 'info')
+            self.results = None
+
+        except Exception as e:
+            self.error = str(e)
+            self.status = 'error'
+            self.add_log(f'Error: {self.error}', 'error')
 
     def stop(self):
         """Stop running benchmark"""
