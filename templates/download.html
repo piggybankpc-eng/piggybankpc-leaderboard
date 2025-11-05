@@ -16,37 +16,71 @@
                 </p>
             </div>
 
-            <!-- NEW: Web-Based Benchmark Control -->
+            <!-- NEW: Client Agent - Easy Setup -->
             <div class="card shadow-lg mb-4 border-success" style="border-width: 3px;">
                 <div class="card-header bg-success text-white">
                     <h3 class="mb-0">
-                        <i class="bi bi-rocket-takeoff"></i> 🚀 NEW: Web-Based Benchmark Control
+                        <i class="bi bi-rocket-takeoff"></i> 🚀 RECOMMENDED: One-Command Installation
                     </h3>
                 </div>
                 <div class="card-body">
-                    <h5>Run Benchmarks Directly from Your Browser!</h5>
+                    <h5>Run This Simple Command on Your PC:</h5>
                     <p class="mb-3">
-                        ✨ No download needed! Use our new web-based control panel to run benchmarks directly from your browser with:
+                        Our lightweight client agent will:
                     </p>
                     <ul class="mb-3">
-                        <li>🎯 Real-time progress tracking</li>
-                        <li>📊 Live log output</li>
-                        <li>🎮 One-click benchmark execution</li>
-                        <li>⬇️ Instant result downloads</li>
+                        <li>✅ Automatically detect your hardware (CPU, GPU, RAM)</li>
+                        <li>✅ Check for required dependencies</li>
+                        <li>✅ Download the benchmark AppImage</li>
+                        <li>✅ Run benchmarks locally on YOUR PC</li>
+                        <li>✅ Generate results file for upload</li>
                     </ul>
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('benchmark_api.benchmark_control_page') }}" class="btn btn-success btn-lg">
-                            <i class="bi bi-play-circle"></i> Launch Web Benchmark Control Panel
+
+                    <div class="alert alert-dark mb-3">
+                        <strong>💻 Linux Command:</strong>
+                        <div class="input-group mt-2">
+                            <input type="text" class="form-control font-monospace"
+                                   value="curl -sL piggybankpc.uk/static/run-piggybankpc.sh | bash"
+                                   id="linux-command" readonly>
+                            <button class="btn btn-outline-light" type="button" onclick="copyCommand('linux-command')">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">Or download and run manually:</small>
+                        <a href="{{ url_for('static', filename='piggybankpc-client.py') }}" class="btn btn-sm btn-outline-light mt-2">
+                            <i class="bi bi-download"></i> Download Client Agent
                         </a>
+                    </div>
+
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> <strong>How it works:</strong><br>
+                        The client agent runs on YOUR computer (not our server), so it can accurately detect your hardware and run benchmarks locally. Results are saved to a .pbr file that you upload here.
                     </div>
                 </div>
             </div>
 
             <div class="text-center mb-3">
                 <p class="text-muted">
-                    <strong>OR</strong> download the AppImage for offline use:
+                    <strong>OR</strong> download the AppImage manually:
                 </p>
             </div>
+
+            <script>
+            function copyCommand(elementId) {
+                var copyText = document.getElementById(elementId);
+                copyText.select();
+                copyText.setSelectionRange(0, 99999);
+                navigator.clipboard.writeText(copyText.value);
+
+                // Visual feedback
+                var btn = event.target;
+                var originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                setTimeout(function() {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }
+            </script>
 
             <!-- Download Card -->
             <div class="card shadow-lg mb-4">
