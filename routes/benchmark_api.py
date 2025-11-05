@@ -69,10 +69,22 @@ class BenchmarkRunner:
                 download_url = "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage"
                 download_path = home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage"
 
+                # Ensure Desktop directory exists
+                download_path.parent.mkdir(parents=True, exist_ok=True)
+
                 try:
                     import urllib.request
                     self.add_log(f'Downloading from: {download_url}', 'info')
-                    urllib.request.urlretrieve(download_url, download_path)
+
+                    # Download with progress
+                    def report_progress(block_num, block_size, total_size):
+                        downloaded = block_num * block_size
+                        if total_size > 0:
+                            percent = min(int((downloaded / total_size) * 100), 100)
+                            if percent % 10 == 0:  # Log every 10%
+                                self.add_log(f'Download progress: {percent}%', 'info')
+
+                    urllib.request.urlretrieve(download_url, download_path, reporthook=report_progress)
 
                     # Make executable
                     import os
@@ -122,13 +134,33 @@ class BenchmarkRunner:
             # Execute AppImage with argument
             self.add_log(f'Executing: {appimage_path} {arg}', 'info')
 
-            self.process = subprocess.Popen(
-                [str(appimage_path), arg, '--no-deps-check'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1
-            )
+            # Check if AppImage is executable
+            import os
+            if not os.access(appimage_path, os.X_OK):
+                self.add_log('Making AppImage executable...', 'info')
+                os.chmod(appimage_path, 0o755)
+
+            # Try to execute AppImage with --appimage-extract-and-run if FUSE fails
+            try:
+                self.process = subprocess.Popen(
+                    [str(appimage_path), arg, '--no-deps-check'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,
+                    env=os.environ.copy()
+                )
+            except Exception as e:
+                # Fallback: Try extracting and running
+                self.add_log(f'Direct execution failed, trying extract method: {str(e)}', 'info')
+                self.process = subprocess.Popen(
+                    [str(appimage_path), '--appimage-extract-and-run', arg, '--no-deps-check'],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,
+                    env=os.environ.copy()
+                )
 
             # Monitor process output
             self.progress = 20
@@ -145,6 +177,10 @@ class BenchmarkRunner:
                         self.add_log('✓ Benchmark execution completed', 'success')
                     else:
                         self.add_log(f'Benchmark exited with code {retcode}', 'error')
+                        # Read and log stderr for debugging
+                        stderr = self.process.stderr.read()
+                        if stderr:
+                            self.add_log(f'Error output: {stderr}', 'error')
                     break
 
                 # Read output line by line
