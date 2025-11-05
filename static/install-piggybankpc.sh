@@ -119,6 +119,16 @@ else
     INSTALL_SYSBENCH=1
 fi
 
+# Check for lm-sensors (optional - for CPU temperature monitoring)
+if command -v sensors >/dev/null 2>&1; then
+    echo "[x] lm-sensors: Found (for thermal monitoring)"
+    HAS_SENSORS=1
+else
+    echo "[ ] lm-sensors: Not found (CPU temp monitoring will use fallback)"
+    HAS_SENSORS=0
+    INSTALL_SENSORS=1
+fi
+
 echo ""
 
 # Step 3: Install missing required dependencies
@@ -236,6 +246,35 @@ if [ -n "$INSTALL_SYSBENCH" ]; then
         fi
     else
         echo "Skipping Sysbench (CPU benchmark will be skipped)"
+    fi
+    echo ""
+fi
+
+# Install lm-sensors
+if [ -n "$INSTALL_SENSORS" ]; then
+    echo "Installing lm-sensors (for CPU temperature monitoring)..."
+    read -p "Install lm-sensors? (y/n): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [ "$OS" = "ubuntu" ] || [ "$OS" = "debian" ]; then
+            sudo apt install -y lm-sensors
+            # Run sensors-detect non-interactively
+            echo "Configuring sensors..."
+            sudo sensors-detect --auto
+        elif [ "$OS" = "fedora" ]; then
+            sudo dnf install -y lm_sensors
+            sudo sensors-detect --auto
+        elif [ "$OS" = "arch" ]; then
+            sudo pacman -S --noconfirm lm_sensors
+            sudo sensors-detect --auto
+        fi
+
+        if command -v sensors >/dev/null 2>&1; then
+            echo "[x] lm-sensors installed!"
+            HAS_SENSORS=1
+        fi
+    else
+        echo "Skipping lm-sensors (CPU temp monitoring will use fallback)"
     fi
     echo ""
 fi
