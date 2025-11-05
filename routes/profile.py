@@ -14,20 +14,39 @@ def view_profile(username):
     """View user profile"""
     user = User.query.filter_by(username=username).first_or_404()
 
-    # Get user's submissions
-    submissions = Submission.query.filter_by(
-        user_id=user.id,
-        verified=True
-    ).order_by(desc(Submission.submission_date)).all()
+    # Check if viewing own profile or user is admin
+    is_own_profile = current_user.is_authenticated and current_user.id == user.id
+    is_admin_viewing = current_user.is_authenticated and current_user.is_admin
 
-    # Calculate statistics
+    # Get user's submissions
+    # Show unpublished only if viewing own profile or if admin (anti-spoiler for others)
+    if is_own_profile or is_admin_viewing:
+        # Show all verified submissions (including unpublished)
+        submissions = Submission.query.filter_by(
+            user_id=user.id,
+            verified=True
+        ).order_by(desc(Submission.submission_date)).all()
+    else:
+        # Public view: only show published submissions (anti-spoiler)
+        submissions = Submission.query.filter_by(
+            user_id=user.id,
+            verified=True,
+            published=True
+        ).order_by(desc(Submission.submission_date)).all()
+
+    # Calculate statistics (only from shown submissions)
     stats = {}
 
     if submissions:
-        # Average FPS
-        avg_fps = db.session.query(
-            func.avg(Submission.fps_avg)
-        ).filter_by(user_id=user.id, verified=True).scalar()
+        # Average FPS (from shown submissions only)
+        if is_own_profile or is_admin_viewing:
+            avg_fps = db.session.query(
+                func.avg(Submission.fps_avg)
+            ).filter_by(user_id=user.id, verified=True).scalar()
+        else:
+            avg_fps = db.session.query(
+                func.avg(Submission.fps_avg)
+            ).filter_by(user_id=user.id, verified=True, published=True).scalar()
 
         # Best price-per-FPS
         best_value = None
@@ -55,9 +74,6 @@ def view_profile(username):
             'total_submissions': 0,
             'best_fps': 0
         }
-
-    # Check if viewing own profile
-    is_own_profile = current_user.is_authenticated and current_user.id == user.id
 
     return render_template(
         'profile.html',

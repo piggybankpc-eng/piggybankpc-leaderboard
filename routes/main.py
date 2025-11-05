@@ -13,13 +13,13 @@ main_bp = Blueprint('main', __name__)
 def index():
     """Landing page"""
 
-    # Get top 5 recent submissions for preview
-    recent_submissions = Submission.query.filter_by(verified=True).order_by(
+    # Get top 5 recent submissions for preview (exclude unpublished official builds - anti-spoiler)
+    recent_submissions = Submission.query.filter_by(verified=True, published=True).order_by(
         desc(Submission.submission_date)
     ).limit(5).all()
 
-    # Get best value (price-per-FPS) submissions
-    all_submissions = Submission.query.filter_by(verified=True).filter(
+    # Get best value (price-per-FPS) submissions (exclude unpublished official builds)
+    all_submissions = Submission.query.filter_by(verified=True, published=True).filter(
         Submission.fps_avg > 0,
         Submission.gpu_price > 0
     ).all()
@@ -33,14 +33,18 @@ def index():
     best_value_submissions.sort(key=lambda x: x.price_per_fps)
     best_value_submissions = best_value_submissions[:5]
 
-    # Get statistics
-    total_submissions = Submission.query.filter_by(verified=True).count()
-    unique_users = db.session.query(Submission.user_id).distinct().count()
+    # Get statistics (exclude unpublished official builds)
+    total_submissions = Submission.query.filter_by(verified=True, published=True).count()
+    unique_users = db.session.query(Submission.user_id).filter(
+        Submission.verified == True,
+        Submission.published == True
+    ).distinct().count()
 
-    # Get this week's submissions
+    # Get this week's submissions (exclude unpublished official builds)
     week_ago = datetime.utcnow() - timedelta(days=7)
     week_submissions = Submission.query.filter(
         Submission.verified == True,
+        Submission.published == True,
         Submission.submission_date >= week_ago
     ).count()
 
