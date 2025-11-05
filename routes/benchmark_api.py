@@ -387,22 +387,35 @@ def save_gpu_price():
     try:
         data = request.json
         price = float(data.get('price', 0))
+        gpu_model = data.get('gpu_model', None)  # Optional - use if provided
 
         if price < 0:
             return jsonify({'success': False, 'error': 'Invalid price'}), 400
 
-        # Get GPU model
-        result = subprocess.run(
-            ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        # Get GPU model if not provided
+        if not gpu_model:
+            try:
+                # Try to find nvidia-smi
+                import shutil
+                nvidia_smi = shutil.which('nvidia-smi')
+                if not nvidia_smi:
+                    nvidia_smi = '/usr/bin/nvidia-smi'
 
-        if result.returncode != 0:
-            return jsonify({'success': False, 'error': 'Could not detect GPU'}), 400
+                result = subprocess.run(
+                    [nvidia_smi, '--query-gpu=name', '--format=csv,noheader'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
 
-        gpu_model = result.stdout.strip()
+                if result.returncode == 0:
+                    gpu_model = result.stdout.strip()
+                else:
+                    # Fallback: use generic name
+                    gpu_model = 'Unknown GPU'
+            except Exception as e:
+                # If nvidia-smi fails, use generic name
+                gpu_model = 'Unknown GPU'
 
         # Save to config file
         home_dir = Path.home()

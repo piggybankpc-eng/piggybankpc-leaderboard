@@ -457,7 +457,7 @@
                             addLog('✓ GPU price found: £' + data.gpu_price.toFixed(2), 'success');
                             finishPreparation();
                         } else {
-                            addLog('⚠ GPU price not found - please enter price below', 'info');
+                            addLog('⚠ GPU price not found - please enter price above in the yellow box', 'info');
                             document.getElementById('gpu-price-input').classList.add('active');
                             updateProgress(100);
                             // Still enable buttons, but show warning
