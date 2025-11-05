@@ -429,6 +429,54 @@ class HardwareDetector:
 
         return stats
 
+    def get_current_cpu_stats(self):
+        """
+        Get real-time CPU statistics (temp, utilization)
+
+        Returns:
+            dict: Current CPU statistics
+        """
+        stats = {}
+
+        # Try to get CPU temperature using multiple methods
+        # Method 1: sensors command (most reliable)
+        success, temp_output, _ = self.run_command(["sensors", "-u"])
+        if success and temp_output:
+            # Parse sensors output for CPU temperature
+            import re
+            # Look for coretemp or k10temp (AMD) or other CPU temp sensors
+            temp_lines = re.findall(r'(temp\d+_input|Tdie|Tctl|Package id 0):\s*([0-9.]+)', temp_output)
+            if temp_lines:
+                # Get the highest temperature reading
+                temps = [float(line[1]) for line in temp_lines]
+                stats["temperature"] = int(max(temps))
+
+        # Method 2: /sys/class/thermal (fallback)
+        if "temperature" not in stats:
+            success, temp_output, _ = self.run_command([
+                "cat", "/sys/class/thermal/thermal_zone0/temp"
+            ])
+            if success and temp_output:
+                try:
+                    # Temperature in millidegrees Celsius
+                    temp_millidegrees = int(temp_output.strip())
+                    stats["temperature"] = temp_millidegrees // 1000
+                except ValueError:
+                    pass
+
+        # Get CPU utilization using top
+        success, top_output, _ = self.run_command([
+            "top", "-bn1"
+        ])
+        if success and top_output:
+            import re
+            # Parse CPU line from top output
+            cpu_match = re.search(r'%Cpu\(s\):\s+([0-9.]+)\s+us', top_output)
+            if cpu_match:
+                stats["cpu_utilization"] = f"{cpu_match.group(1)}%"
+
+        return stats
+
 
 if __name__ == "__main__":
     # Test hardware detection

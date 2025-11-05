@@ -5,6 +5,7 @@ Measures gaming performance and GPU capabilities
 """
 
 import subprocess
+import sys
 import time
 import logging
 import json
@@ -18,12 +19,13 @@ from typing import Dict, Optional
 class FPSBenchmark:
     """Runs FPS benchmarks using Unigine Heaven or fallback tools"""
 
-    def __init__(self, base_dir, hardware_detector=None):
+    def __init__(self, base_dir, hardware_detector=None, interactive=True):
         self.base_dir = Path(base_dir)
         self.results_dir = self.base_dir / "results"
         self.results_dir.mkdir(exist_ok=True)
         self.logger = logging.getLogger("FPSBenchmark")
         self.hardware_detector = hardware_detector
+        self.interactive = interactive  # If False, skip all input() prompts
 
     def check_unigine_installed(self) -> bool:
         """
@@ -34,10 +36,11 @@ class FPSBenchmark:
         """
         # Check common installation paths
         possible_paths = [
+            Path.home() / "Unigine_Heaven-4.0",
+            Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path.home() / ".local/share/unigine/heaven",
             Path("/opt/unigine/heaven"),
-            Path("/usr/share/unigine/heaven"),
-            Path.home() / "Unigine_Heaven-4.0"
+            Path("/usr/share/unigine/heaven")
         ]
 
         for path in possible_paths:
@@ -138,10 +141,14 @@ class FPSBenchmark:
         print("3. When done, click 'Benchmark' to save results")
         print("4. Close Heaven")
         print("5. We'll read your results automatically!")
-        print("6. Get suggestions for next test or skip ahead")
+        print("6. Repeat for different settings or close to continue")
         print(f"{'='*70}\n")
 
-        input("Press ENTER to start...")
+        # Check if stdin is available for user prompts
+        has_stdin = sys.stdin.isatty() if hasattr(sys.stdin, 'isatty') else False
+
+        if has_stdin:
+            input("Press ENTER to start...")
 
         all_results = {}
         test_number = 1
@@ -174,17 +181,22 @@ class FPSBenchmark:
                 if suggestion:
                     print(f"\n{suggestion}")
 
-            # Ask what to do next
-            print(f"\n{'='*70}")
-            print("What would you like to do?")
-            print("1. Run another test")
-            print("2. Finish FPS testing and move to AI/CPU benchmarks")
-            choice = input("\nChoice (1-2): ").strip()
+            # Ask what to do next (only if stdin available)
+            if has_stdin:
+                print(f"\n{'='*70}")
+                print("What would you like to do?")
+                print("1. Run another test")
+                print("2. Finish FPS testing and move to AI/CPU benchmarks")
+                choice = input("\nChoice (1-2): ").strip()
 
-            if choice == "2":
+                if choice == "2":
+                    break
+
+                test_number += 1
+            else:
+                # Non-interactive mode: run once and finish
+                print("\n✓ Heaven benchmark complete, moving to next benchmark...")
                 break
-
-            test_number += 1
 
         return {
             "benchmark_type": "unigine_heaven_interactive",
@@ -197,6 +209,7 @@ class FPSBenchmark:
         """Find Unigine Heaven binary"""
         heaven_paths = [
             Path.home() / "Unigine_Heaven-4.0",
+            Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path("/opt/unigine/heaven"),
             Path.home() / ".local/share/unigine/heaven",
         ]
@@ -395,6 +408,9 @@ class FPSBenchmark:
             # Monitor for duration
             start_time = time.time()
             gpu_temps = []
+            gpu_utils = []
+            cpu_temps = []
+            cpu_utils = []
 
             print("Heaven GUI launched! Monitor running...")
             print("(You should see the Heaven benchmark window)\n")
@@ -408,10 +424,32 @@ class FPSBenchmark:
 
                 # Get GPU stats
                 if self.hardware_detector:
-                    stats = self.hardware_detector.get_current_gpu_stats()
-                    if 'temperature' in stats:
-                        gpu_temps.append(stats['temperature'])
-                        print(f" | GPU Temp: {stats['temperature']}°C", end="", flush=True)
+                    gpu_stats = self.hardware_detector.get_current_gpu_stats()
+                    if 'temperature' in gpu_stats:
+                        gpu_temps.append(gpu_stats['temperature'])
+                        print(f" | GPU: {gpu_stats['temperature']}°C", end="", flush=True)
+
+                    if 'gpu_utilization' in gpu_stats:
+                        util_str = gpu_stats['gpu_utilization'].replace('%', '').strip()
+                        try:
+                            gpu_utils.append(float(util_str))
+                            print(f" {util_str}%", end="", flush=True)
+                        except ValueError:
+                            pass
+
+                    # Get CPU stats
+                    cpu_stats = self.hardware_detector.get_current_cpu_stats()
+                    if 'temperature' in cpu_stats:
+                        cpu_temps.append(cpu_stats['temperature'])
+                        print(f" | CPU: {cpu_stats['temperature']}°C", end="", flush=True)
+
+                    if 'cpu_utilization' in cpu_stats:
+                        cpu_util_str = cpu_stats['cpu_utilization'].replace('%', '').strip()
+                        try:
+                            cpu_utils.append(float(cpu_util_str))
+                            print(f" {cpu_util_str}%", end="", flush=True)
+                        except ValueError:
+                            pass
 
                 time.sleep(5)
 
@@ -424,6 +462,25 @@ class FPSBenchmark:
 
             print("\n\nTest completed!")
 
+            # Prepare thermal metrics
+            thermal_metrics = {}
+            if gpu_temps:
+                thermal_metrics["gpu_temp_min"] = min(gpu_temps)
+                thermal_metrics["gpu_temp_avg"] = round(sum(gpu_temps) / len(gpu_temps), 1)
+                thermal_metrics["gpu_temp_max"] = max(gpu_temps)
+            if gpu_utils:
+                thermal_metrics["gpu_util_min"] = round(min(gpu_utils), 1)
+                thermal_metrics["gpu_util_avg"] = round(sum(gpu_utils) / len(gpu_utils), 1)
+                thermal_metrics["gpu_util_max"] = round(max(gpu_utils), 1)
+            if cpu_temps:
+                thermal_metrics["cpu_temp_min"] = min(cpu_temps)
+                thermal_metrics["cpu_temp_avg"] = round(sum(cpu_temps) / len(cpu_temps), 1)
+                thermal_metrics["cpu_temp_max"] = max(cpu_temps)
+            if cpu_utils:
+                thermal_metrics["cpu_util_min"] = round(min(cpu_utils), 1)
+                thermal_metrics["cpu_util_avg"] = round(sum(cpu_utils) / len(cpu_utils), 1)
+                thermal_metrics["cpu_util_max"] = round(max(cpu_utils), 1)
+
             return {
                 "status": "completed",
                 "duration": duration,
@@ -432,8 +489,7 @@ class FPSBenchmark:
                 "average_fps": "N/A",  # Heaven doesn't output to stdout easily
                 "min_fps": "N/A",
                 "max_fps": "N/A",
-                "gpu_temp_avg": sum(gpu_temps) / len(gpu_temps) if gpu_temps else "N/A",
-                "gpu_temp_max": max(gpu_temps) if gpu_temps else "N/A",
+                "thermal_metrics": thermal_metrics,
                 "timestamp": datetime.now().isoformat()
             }
 
@@ -570,9 +626,10 @@ class FPSBenchmark:
 
         # Find Unigine Heaven installation
         heaven_paths = [
+            Path.home() / "Unigine_Heaven-4.0",
+            Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path.home() / ".local/share/unigine/heaven",
-            Path("/opt/unigine/heaven"),
-            Path.home() / "Unigine_Heaven-4.0"
+            Path("/opt/unigine/heaven")
         ]
 
         heaven_bin = None
@@ -663,6 +720,9 @@ class FPSBenchmark:
             # Monitor during test
             start_time = time.time()
             gpu_temps = []
+            gpu_utils = []
+            cpu_temps = []
+            cpu_utils = []
             gpu_clocks = []
 
             while time.time() - start_time < duration:
@@ -675,17 +735,39 @@ class FPSBenchmark:
 
                 # Get GPU stats
                 if self.hardware_detector:
-                    stats = self.hardware_detector.get_current_gpu_stats()
-                    if 'temperature' in stats:
-                        gpu_temps.append(stats['temperature'])
-                        print(f" | GPU Temp: {stats['temperature']}°C", end="", flush=True)
+                    gpu_stats = self.hardware_detector.get_current_gpu_stats()
+                    if 'temperature' in gpu_stats:
+                        gpu_temps.append(gpu_stats['temperature'])
+                        print(f" | GPU: {gpu_stats['temperature']}°C", end="", flush=True)
 
-                        # Warn if overheating
-                        if stats['temperature'] > 80:
-                            print(" ⚠️ HIGH TEMP", end="", flush=True)
+                    if 'gpu_utilization' in gpu_stats:
+                        util_str = gpu_stats['gpu_utilization'].replace('%', '').strip()
+                        try:
+                            gpu_utils.append(float(util_str))
+                            print(f" {util_str}%", end="", flush=True)
+                        except ValueError:
+                            pass
 
-                    if 'gpu_clock' in stats:
-                        gpu_clocks.append(stats['gpu_clock'])
+                    # Get CPU stats
+                    cpu_stats = self.hardware_detector.get_current_cpu_stats()
+                    if 'temperature' in cpu_stats:
+                        cpu_temps.append(cpu_stats['temperature'])
+                        print(f" | CPU: {cpu_stats['temperature']}°C", end="", flush=True)
+
+                    if 'cpu_utilization' in cpu_stats:
+                        cpu_util_str = cpu_stats['cpu_utilization'].replace('%', '').strip()
+                        try:
+                            cpu_utils.append(float(cpu_util_str))
+                            print(f" {cpu_util_str}%", end="", flush=True)
+                        except ValueError:
+                            pass
+
+                    # Warn if overheating
+                    if 'temperature' in gpu_stats and gpu_stats['temperature'] > 80:
+                        print(" ⚠️ HIGH TEMP", end="", flush=True)
+
+                    if 'gpu_clock' in gpu_stats:
+                        gpu_clocks.append(gpu_stats['gpu_clock'])
 
                 time.sleep(5)
 
@@ -699,6 +781,25 @@ class FPSBenchmark:
 
             print("\n\nTest completed!")
 
+            # Prepare thermal metrics
+            thermal_metrics = {}
+            if gpu_temps:
+                thermal_metrics["gpu_temp_min"] = min(gpu_temps)
+                thermal_metrics["gpu_temp_avg"] = round(sum(gpu_temps) / len(gpu_temps), 1)
+                thermal_metrics["gpu_temp_max"] = max(gpu_temps)
+            if gpu_utils:
+                thermal_metrics["gpu_util_min"] = round(min(gpu_utils), 1)
+                thermal_metrics["gpu_util_avg"] = round(sum(gpu_utils) / len(gpu_utils), 1)
+                thermal_metrics["gpu_util_max"] = round(max(gpu_utils), 1)
+            if cpu_temps:
+                thermal_metrics["cpu_temp_min"] = min(cpu_temps)
+                thermal_metrics["cpu_temp_avg"] = round(sum(cpu_temps) / len(cpu_temps), 1)
+                thermal_metrics["cpu_temp_max"] = max(cpu_temps)
+            if cpu_utils:
+                thermal_metrics["cpu_util_min"] = round(min(cpu_utils), 1)
+                thermal_metrics["cpu_util_avg"] = round(sum(cpu_utils) / len(cpu_utils), 1)
+                thermal_metrics["cpu_util_max"] = round(max(cpu_utils), 1)
+
             # Parse results from output
             # Note: Unigine Heaven outputs results to log file
             results = {
@@ -709,8 +810,7 @@ class FPSBenchmark:
                 "average_fps": self._extract_fps_from_output(stdout, stderr),
                 "min_fps": "N/A",  # Would need log file parsing
                 "max_fps": "N/A",  # Would need log file parsing
-                "gpu_temp_avg": sum(gpu_temps) / len(gpu_temps) if gpu_temps else "N/A",
-                "gpu_temp_max": max(gpu_temps) if gpu_temps else "N/A",
+                "thermal_metrics": thermal_metrics,
                 "timestamp": datetime.now().isoformat()
             }
 
@@ -834,6 +934,11 @@ class FPSBenchmark:
         Returns:
             dict: Benchmark results
         """
+        # Force fallback if non-interactive (no stdin available for input())
+        if not self.interactive:
+            self.logger.info("Running in non-interactive mode - using synthetic benchmark")
+            return self.run_synthetic_benchmark(duration)
+
         if not force_fallback and self.check_unigine_installed():
             return self.run_unigine_heaven(duration)
         else:
