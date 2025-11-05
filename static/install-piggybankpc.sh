@@ -90,22 +90,29 @@ if [ -d "$HOME/Unigine_Heaven-4.0" ]; then
     echo "[x] Unigine Heaven: Found at $HOME/Unigine_Heaven-4.0"
     HAS_HEAVEN=1
 else
-    echo "[ ] Unigine Heaven: Not found (optional, will use fallback benchmark)"
+    echo "[ ] Unigine Heaven: Not found"
     HAS_HEAVEN=0
+    INSTALL_HEAVEN=1
 fi
 
 # Check for Ollama (optional)
 if command -v ollama >/dev/null 2>&1; then
     echo "[x] Ollama: Found (for AI benchmarks)"
+    HAS_OLLAMA=1
 else
-    echo "[ ] Ollama: Not found (optional, AI benchmark will be skipped)"
+    echo "[ ] Ollama: Not found"
+    HAS_OLLAMA=0
+    INSTALL_OLLAMA=1
 fi
 
 # Check for sysbench (optional)
 if command -v sysbench >/dev/null 2>&1; then
     echo "[x] Sysbench: Found (for CPU benchmarks)"
+    HAS_SYSBENCH=1
 else
-    echo "[ ] Sysbench: Not found (optional, CPU benchmark will be skipped)"
+    echo "[ ] Sysbench: Not found"
+    HAS_SYSBENCH=0
+    INSTALL_SYSBENCH=1
 fi
 
 echo ""
@@ -146,8 +153,93 @@ fi
 
 echo ""
 
-# Step 4: Download benchmark AppImage
-echo "=== Step 4: Downloading Benchmark AppImage ==="
+# Step 4: Install optional benchmark tools
+echo "=== Step 4: Installing Optional Benchmark Tools ==="
+echo ""
+
+# Install Unigine Heaven
+if [ -n "$INSTALL_HEAVEN" ]; then
+    echo "Installing Unigine Heaven (for accurate FPS benchmarks)..."
+    read -p "Download and install Unigine Heaven? (~1.5GB download) (y/n): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Downloading Unigine Heaven 4.0..."
+
+        HEAVEN_URL="https://assets.unigine.com/d/Unigine_Heaven-4.0.run"
+        HEAVEN_INSTALLER="/tmp/Unigine_Heaven-4.0.run"
+
+        curl -L "$HEAVEN_URL" -o "$HEAVEN_INSTALLER"
+
+        if [ -f "$HEAVEN_INSTALLER" ]; then
+            chmod +x "$HEAVEN_INSTALLER"
+            echo "Running installer..."
+            "$HEAVEN_INSTALLER"
+            rm -f "$HEAVEN_INSTALLER"
+            echo "[x] Unigine Heaven installed!"
+            HAS_HEAVEN=1
+        else
+            echo "Download failed, will use fallback benchmark"
+        fi
+    else
+        echo "Skipping Unigine Heaven (will use fallback benchmark)"
+    fi
+    echo ""
+fi
+
+# Install Ollama
+if [ -n "$INSTALL_OLLAMA" ]; then
+    echo "Installing Ollama (for AI/LLM benchmarks)..."
+    read -p "Download and install Ollama? (~500MB) (y/n): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Downloading Ollama installer..."
+        curl -fsSL https://ollama.com/install.sh | sh
+
+        if command -v ollama >/dev/null 2>&1; then
+            echo "[x] Ollama installed!"
+            echo ""
+            echo "Downloading llama2:7b model (for AI benchmark)..."
+            echo "This may take several minutes..."
+            ollama pull llama2:7b
+            echo "[x] LLM model downloaded!"
+            HAS_OLLAMA=1
+        else
+            echo "Installation failed, AI benchmark will be skipped"
+        fi
+    else
+        echo "Skipping Ollama (AI benchmark will be skipped)"
+    fi
+    echo ""
+fi
+
+# Install Sysbench
+if [ -n "$INSTALL_SYSBENCH" ]; then
+    echo "Installing Sysbench (for CPU benchmarks)..."
+    read -p "Install Sysbench? (y/n): " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [ "$OS" = "ubuntu" ] || [ "$OS" = "debian" ]; then
+            sudo apt install -y sysbench
+        elif [ "$OS" = "fedora" ]; then
+            sudo dnf install -y sysbench
+        elif [ "$OS" = "arch" ]; then
+            sudo pacman -S --noconfirm sysbench
+        fi
+
+        if command -v sysbench >/dev/null 2>&1; then
+            echo "[x] Sysbench installed!"
+            HAS_SYSBENCH=1
+        fi
+    else
+        echo "Skipping Sysbench (CPU benchmark will be skipped)"
+    fi
+    echo ""
+fi
+
+echo ""
+
+# Step 5: Download benchmark AppImage
+echo "=== Step 5: Downloading Benchmark AppImage ==="
 echo ""
 
 DOWNLOAD_DIR="$HOME/Desktop"
