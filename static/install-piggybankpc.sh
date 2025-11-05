@@ -248,27 +248,53 @@ echo ""
 
 DOWNLOAD_DIR="$HOME/Desktop"
 mkdir -p "$DOWNLOAD_DIR"
+mkdir -p "$HOME/PiggyBankPC/config"
 
 APPIMAGE_PATH="$DOWNLOAD_DIR/PiggyBankPC-Benchmark.AppImage"
+VERSION_FILE="$HOME/PiggyBankPC/config/appimage-version.txt"
+
+NEED_DOWNLOAD=0
 
 if [ -f "$APPIMAGE_PATH" ]; then
-    echo "AppImage already exists at: $APPIMAGE_PATH"
-    read -p "Re-download? (y/n): " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Checking AppImage version..."
+
+    # Get server version
+    SERVER_VERSION=$(curl -sL "https://piggybankpc.uk/static/appimage-version.txt" 2>/dev/null)
+
+    # Get local version
+    if [ -f "$VERSION_FILE" ]; then
+        LOCAL_VERSION=$(cat "$VERSION_FILE")
+    else
+        LOCAL_VERSION="0"
+    fi
+
+    if [ "$SERVER_VERSION" = "$LOCAL_VERSION" ]; then
+        echo "[x] Latest version already installed"
         echo "Using existing AppImage"
     else
-        echo "Downloading from piggybankpc.uk..."
-        curl -L "https://piggybankpc.uk/static/PiggyBankPC-Benchmark.AppImage" \
-             -o "$APPIMAGE_PATH"
-        chmod +x "$APPIMAGE_PATH"
-        echo "Downloaded to: $APPIMAGE_PATH"
+        echo "[ ] Update available (local: $LOCAL_VERSION, server: $SERVER_VERSION)"
+        read -p "Download latest version? (y/n): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            NEED_DOWNLOAD=1
+        else
+            echo "Using existing AppImage"
+        fi
     fi
 else
+    NEED_DOWNLOAD=1
+fi
+
+if [ "$NEED_DOWNLOAD" -eq 1 ]; then
     echo "Downloading from piggybankpc.uk..."
     curl -L "https://piggybankpc.uk/static/PiggyBankPC-Benchmark.AppImage" \
          -o "$APPIMAGE_PATH"
     chmod +x "$APPIMAGE_PATH"
+
+    # Save version
+    SERVER_VERSION=$(curl -sL "https://piggybankpc.uk/static/appimage-version.txt" 2>/dev/null)
+    echo "$SERVER_VERSION" > "$VERSION_FILE"
+
     echo "Downloaded to: $APPIMAGE_PATH"
 fi
 

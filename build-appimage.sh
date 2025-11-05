@@ -60,6 +60,12 @@ echo ""
 echo "✅ AppImage built successfully!"
 echo "📦 Output: PiggyBankPC-Benchmark.AppImage"
 echo "📏 Size: $(du -h PiggyBankPC-Benchmark.AppImage | cut -f1)"
+
+# Update version file
+echo "📝 Updating version file..."
+date +%s > static/appimage-version.txt
+echo "   Version: $(cat static/appimage-version.txt)"
+
 echo ""
 echo "🧪 Test it with: ./PiggyBankPC-Benchmark.AppImage"
-echo "📤 Upload to GitHub Releases when ready!"
+echo "📤 Don't forget to: cp PiggyBankPC-Benchmark.AppImage static/ && git commit"
