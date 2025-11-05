@@ -421,5 +421,88 @@ class BenchmarkSuite:
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description='PiggyBankPC Benchmark Suite',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s                   # Interactive mode
+  %(prog)s --quick           # Quick benchmark (FPS only)
+  %(prog)s --full            # Full suite (FPS + AI + CPU)
+  %(prog)s --fps             # FPS benchmark only
+  %(prog)s --ai              # AI benchmark only
+  %(prog)s --cpu             # CPU benchmark only
+        """
+    )
+
+    parser.add_argument('--quick', action='store_true',
+                        help='Run quick benchmark (FPS only, ~15 min)')
+    parser.add_argument('--full', action='store_true',
+                        help='Run full benchmark suite (FPS + AI + CPU, ~90 min)')
+    parser.add_argument('--fps', action='store_true',
+                        help='Run FPS benchmark only')
+    parser.add_argument('--ai', action='store_true',
+                        help='Run AI token benchmark only')
+    parser.add_argument('--cpu', action='store_true',
+                        help='Run CPU benchmark only')
+    parser.add_argument('--no-deps-check', action='store_true',
+                        help='Skip dependency checking (assumes all tools installed)')
+
+    args = parser.parse_args()
+
     suite = BenchmarkSuite()
+
+    # Non-interactive mode - run specified benchmark and exit
+    if args.quick or args.full or args.fps or args.ai or args.cpu:
+        suite.display_header()
+
+        # Check dependencies unless skipped
+        if not args.no_deps_check:
+            print("\n⚙️  Checking dependencies...")
+            dep_checker = DependencyChecker()
+            dep_checker.check_all()
+
+        # Run the specified benchmark
+        if args.quick:
+            suite.run_quick_benchmark()
+        elif args.full:
+            suite.run_full_suite()
+        elif args.fps:
+            print("\n" + "="*70)
+            print("FPS BENCHMARK ONLY")
+            print("="*70)
+            system_info = suite.detect_system()
+            fps_results = suite.fps_benchmark.run_benchmark()
+            suite.all_results['fps'] = fps_results
+            suite.all_results['system_info'] = system_info
+            suite._display_results()
+            suite._export_results()
+        elif args.ai:
+            print("\n" + "="*70)
+            print("AI BENCHMARK ONLY")
+            print("="*70)
+            system_info = suite.detect_system()
+            ai_results = suite.ai_benchmark.run_benchmark()
+            suite.all_results['ai'] = ai_results
+            suite.all_results['system_info'] = system_info
+            suite._display_results()
+            suite._export_results()
+        elif args.cpu:
+            print("\n" + "="*70)
+            print("CPU BENCHMARK ONLY")
+            print("="*70)
+            system_info = suite.detect_system()
+            cpu_results = suite.cpu_benchmark.run_benchmark()
+            suite.all_results['cpu'] = cpu_results
+            suite.all_results['system_info'] = system_info
+            suite._display_results()
+            suite._export_results()
+
+        print("\n✅ Benchmark complete!")
+        print(f"📁 Results saved to: {suite.results_dir}")
+        sys.exit(0)
+
+    # Interactive mode
     suite.run()
