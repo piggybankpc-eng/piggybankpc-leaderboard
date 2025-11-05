@@ -41,7 +41,50 @@ def analyze_submission(submission):
     """
     issues = []
 
-    # 1. THERMAL THROTTLING (High Priority) 🔥💰
+    # 1A. CPU THERMAL THROTTLING (High Priority) 🔥💰
+    if submission.cpu_temp_max and submission.cpu_temp_max >= 85:
+        severity = 'high' if submission.cpu_temp_max >= 90 else 'medium'
+
+        # CPU throttling impact on FPS
+        if submission.cpu_temp_max >= 95:
+            potential_gain = 20  # Severe throttling
+        elif submission.cpu_temp_max >= 90:
+            potential_gain = 15  # Moderate throttling
+        else:
+            potential_gain = 10  # Light throttling
+
+        fps_gain_min = int(submission.fps_avg * potential_gain / 100)
+        fps_gain_max = int(submission.fps_avg * (potential_gain + 10) / 100)
+
+        # Check if user has Intel 13th/14th gen - add BIOS warning
+        cpu_lower = submission.cpu_model.lower()
+        intel_bios_note = ""
+        if any(gen in cpu_lower for gen in ['13th', '14th', 'i9-13', 'i9-14', 'i7-13', 'i7-14', 'i5-13', 'i5-14']):
+            intel_bios_note = " 🔴 CRITICAL: Intel 13th/14th gen CPUs have degradation issues! Update BIOS immediately with Intel's microcode patch!"
+
+        issue = DiagnosticIssue(
+            submission_id=submission.id,
+            issue_type='cpu_thermal_throttling',
+            severity=severity,
+            title='🔥 CPU Thermal Throttling Detected!',
+            description=f'Your CPU reached {submission.cpu_temp_max}°C during testing. This is causing performance throttling to prevent damage.{intel_bios_note}',
+            impact=f'CPU throttling is reducing performance by approximately {potential_gain}%!',
+            potential_fps_gain=f'+{fps_gain_min}-{fps_gain_max} FPS',
+            fix_difficulty='Easy',
+            fix_time='20-30 minutes',
+            fix_cost='£5-15 (thermal paste) or £25-50 (better cooler)',
+            youtube_video_id=YOUTUBE_VIDEOS.get('cpu_thermal_paste'),
+            youtube_title='How to Apply CPU Thermal Paste - Proper Method',
+            products=[
+                get_product_with_link('Arctic MX-4 4g'),  # CPU thermal paste (cheapest fix first!)
+                get_product_with_link('Noctua NH-U12S'),  # Budget tower cooler upgrade
+                get_product_with_link('Arctic P12 120mm')  # Case fan for airflow
+            ]
+        )
+        db.session.add(issue)
+        issues.append(issue)
+
+    # 1B. GPU THERMAL THROTTLING (High Priority) 🔥💰
     if submission.gpu_temp_max and submission.gpu_temp_max >= 83:
         severity = 'high' if submission.gpu_temp_max >= 85 else 'medium'
         potential_gain = calculate_thermal_gain(submission.gpu_temp_max)
@@ -50,28 +93,23 @@ def analyze_submission(submission):
         fps_gain_min = int(submission.fps_avg * potential_gain / 100)
         fps_gain_max = int(submission.fps_avg * (potential_gain + 10) / 100)
 
-        # Check if user has Intel 13th/14th gen - add BIOS warning
-        cpu_lower = submission.cpu_model.lower()
-        intel_bios_note = ""
-        if any(gen in cpu_lower for gen in ['13th', '14th', 'i9-13', 'i9-14', 'i7-13', 'i7-14', 'i5-13', 'i5-14']):
-            intel_bios_note = " 🔴 IMPORTANT: You have an Intel 13th/14th gen CPU. High temps could be a sign of CPU degradation. Update your BIOS with Intel's latest microcode patch ASAP!"
-
         issue = DiagnosticIssue(
             submission_id=submission.id,
-            issue_type='thermal_throttling',
+            issue_type='gpu_thermal_throttling',
             severity=severity,
-            title='🔥 Thermal Throttling Detected!',
-            description=f'Your GPU reached {submission.gpu_temp_max}°C and is throttling performance to protect itself.{intel_bios_note}',
+            title='🔥 GPU Thermal Throttling Detected!',
+            description=f'Your GPU reached {submission.gpu_temp_max}°C and is throttling performance to protect itself. GPU thermal throttling kicks in around 83-85°C on most cards.',
             impact=f'You\'re losing approximately {potential_gain}% of your GPU\'s potential!',
             potential_fps_gain=f'+{fps_gain_min}-{fps_gain_max} FPS',
             fix_difficulty='Easy',
             fix_time='30-45 minutes',
             fix_cost='£15-25',
-            youtube_video_id=YOUTUBE_VIDEOS.get('thermal_throttling'),
+            youtube_video_id=YOUTUBE_VIDEOS.get('gpu_repaste'),
             youtube_title='How to Repaste Your GPU - Complete Guide',
             products=[
-                get_product_with_link('Noctua NT-H1 3.5g'),
-                get_product_with_link('thermal_pads 13w')
+                get_product_with_link('Noctua NT-H1 3.5g'),  # GPU thermal paste
+                get_product_with_link('Gelid GP-Extreme 1.0mm'),  # Thermal pads
+                get_product_with_link('Arctic P12 120mm')  # Case fan for airflow
             ]
         )
         db.session.add(issue)
