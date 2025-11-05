@@ -419,6 +419,50 @@ def save_gpu_price():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@benchmark_api_bp.route('/api/benchmark/prepare', methods=['POST'])
+def prepare_benchmark():
+    """Prepare system for benchmarking - download AppImage, check dependencies"""
+    try:
+        home_dir = Path.home()
+        search_locations = [
+            home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage",
+            home_dir / "Downloads" / "PiggyBankPC-Benchmark.AppImage",
+            home_dir / "PiggyBankPC-Benchmark.AppImage",
+            Path("/home/john/Desktop/benchmark-suite/PiggyBankPC-Benchmark.AppImage"),
+            Path("/storage/data/media/PiggyBankPC-Benchmark-FINAL.AppImage"),
+        ]
+
+        # Check if AppImage already exists
+        appimage_path = None
+        for location in search_locations:
+            if location.exists():
+                appimage_path = location
+                return jsonify({
+                    'success': True,
+                    'message': f'Found at {location.name}'
+                })
+
+        # Download if not found
+        download_url = "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage"
+        download_path = home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage"
+        download_path.parent.mkdir(parents=True, exist_ok=True)
+
+        import urllib.request
+        urllib.request.urlretrieve(download_url, download_path)
+
+        # Make executable
+        import os
+        os.chmod(download_path, 0o755)
+
+        return jsonify({
+            'success': True,
+            'message': 'Downloaded successfully'
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @benchmark_api_bp.route('/api/benchmark/start', methods=['POST'])
 def start_benchmark():
     """Start a new benchmark"""

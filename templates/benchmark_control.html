@@ -397,11 +397,46 @@
     <script>
         let currentBenchmark = null;
         let pollInterval = null;
+        let appImageReady = false;
 
-        // Load system info on page load
+        // Prepare system on page load
         window.onload = function() {
-            loadSystemInfo();
+            document.getElementById('progress-section').classList.add('active');
+            disableButtons(true); // Disable until ready
+            prepareSystem();
         };
+
+        function prepareSystem() {
+            addLog('🚀 Initializing benchmark system...', 'info');
+            updateProgress(5);
+
+            // Step 1: Download/prepare AppImage
+            addLog('Step 1/3: Checking for latest benchmark AppImage...', 'info');
+            fetch('/api/benchmark/prepare', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        addLog('✓ AppImage ready: ' + data.message, 'success');
+                        updateProgress(33);
+                        appImageReady = true;
+
+                        // Step 2: Load system info
+                        addLog('Step 2/3: Detecting system hardware...', 'info');
+                        loadSystemInfo();
+                    } else {
+                        addLog('⚠ Warning: ' + data.error, 'error');
+                        addLog('Will attempt download when benchmark starts...', 'info');
+                        updateProgress(33);
+                        // Continue anyway
+                        loadSystemInfo();
+                    }
+                })
+                .catch(error => {
+                    addLog('⚠ Preparation warning: ' + error, 'error');
+                    updateProgress(33);
+                    loadSystemInfo();
+                });
+        }
 
         function loadSystemInfo() {
             fetch('/api/benchmark/system-info')
@@ -412,16 +447,40 @@
                         document.getElementById('gpu-info').textContent = data.gpu.model || 'Unknown';
                         document.getElementById('ram-info').textContent = data.ram.total || 'Unknown';
 
+                        addLog('✓ System detected', 'success');
+                        updateProgress(66);
+
+                        // Step 3: Check GPU price
+                        addLog('Step 3/3: Checking GPU price...', 'info');
                         if (data.gpu_price > 0) {
                             document.getElementById('gpu-price').textContent = '£' + data.gpu_price.toFixed(2);
+                            addLog('✓ GPU price found: £' + data.gpu_price.toFixed(2), 'success');
+                            finishPreparation();
                         } else {
+                            addLog('⚠ GPU price not found - please enter price below', 'info');
                             document.getElementById('gpu-price-input').classList.add('active');
+                            updateProgress(100);
+                            // Still enable buttons, but show warning
+                            disableButtons(false);
+                            updateStatus('idle');
                         }
                     }
                 })
                 .catch(error => {
                     addLog('Error loading system info: ' + error, 'error');
+                    updateProgress(100);
+                    disableButtons(false);
+                    updateStatus('idle');
                 });
+        }
+
+        function finishPreparation() {
+            updateProgress(100);
+            addLog('', 'info');
+            addLog('✅ System ready! You can now run benchmarks.', 'success');
+            addLog('', 'info');
+            disableButtons(false);
+            updateStatus('idle');
         }
 
         function saveGPUPrice() {
@@ -441,7 +500,10 @@
                 if (data.success) {
                     document.getElementById('gpu-price').textContent = '£' + price.toFixed(2);
                     document.getElementById('gpu-price-input').classList.remove('active');
-                    addLog('GPU price saved successfully', 'success');
+                    addLog('✓ GPU price saved: £' + price.toFixed(2), 'success');
+
+                    // Finish preparation now that price is set
+                    finishPreparation();
                 } else {
                     addLog('Error saving GPU price: ' + data.error, 'error');
                 }
