@@ -63,6 +63,8 @@ def create_app(config_name=None):
     from routes.admin import admin_bp
     # Best All-Rounder
     from routes.best_all_rounder import best_all_rounder_bp
+    # Benchmark API (Web-based benchmark control)
+    from routes.benchmark_api import benchmark_api_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
@@ -79,6 +81,8 @@ def create_app(config_name=None):
     app.register_blueprint(admin_bp)
     # Best all-rounder blueprint
     app.register_blueprint(best_all_rounder_bp)
+    # Benchmark API blueprint
+    app.register_blueprint(benchmark_api_bp)
 
     # Health check endpoint for Docker/Kubernetes/Coolify monitoring
     @app.route('/health')
