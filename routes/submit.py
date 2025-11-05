@@ -22,6 +22,36 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in current_app.config['ALLOWED_EXTENSIONS']
 
 
+def is_intel_13_14_gen_cpu(cpu_model):
+    """
+    Detect if CPU is Intel 13th or 14th generation (affected by degradation issues)
+
+    Args:
+        cpu_model: CPU model string
+
+    Returns:
+        bool: True if Intel 13th/14th gen detected
+    """
+    if not cpu_model:
+        return False
+
+    cpu_lower = cpu_model.lower()
+
+    # Check for explicit generation markers
+    if any(gen in cpu_lower for gen in ['13th gen', '14th gen']):
+        return True
+
+    # Check for specific model numbers (i9/i7/i5/i3-13xxx or 14xxx)
+    intel_patterns = [
+        'i9-13', 'i9-14',
+        'i7-13', 'i7-14',
+        'i5-13', 'i5-14',
+        'i3-13', 'i3-14'
+    ]
+
+    return any(pattern in cpu_lower for pattern in intel_patterns)
+
+
 def extract_submission_data(validated_results):
     """
     Extract submission data from validated results
@@ -258,6 +288,11 @@ def submit():
                 submission.is_official = True
                 submission.published = False  # Hidden until YouTube link added
                 current_app.logger.info(f"Official build submission - marked as unpublished (anti-spoiler)")
+
+            # Detect Intel 13th/14th gen CPUs (for degradation tracking)
+            if is_intel_13_14_gen_cpu(submission.cpu_model):
+                submission.intel_13_14_gen_cpu = True
+                current_app.logger.warning(f"Intel 13th/14th gen CPU detected: {submission.cpu_model}")
 
             db.session.add(submission)
             db.session.commit()

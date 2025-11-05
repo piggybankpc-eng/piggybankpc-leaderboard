@@ -132,6 +132,9 @@ class Submission(db.Model):
     cpu_stock_performance_estimate = db.Column(db.Float)
     performance_gain_percent = db.Column(db.Float)
 
+    # Intel 13th/14th Gen CPU Tracking (for degradation warnings)
+    intel_13_14_gen_cpu = db.Column(db.Boolean, default=False, index=True)
+
     @property
     def price_per_fps(self):
         """Calculate price-per-FPS performance metric"""
