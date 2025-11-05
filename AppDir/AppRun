@@ -1,0 +1,14 @@
+#!/bin/bash
+# AppRun script for PiggyBankPC Benchmark
+
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+
+# Set up Python path
+export PYTHONPATH="${HERE}/usr/lib/python3/dist-packages:${HERE}/usr/lib:${PYTHONPATH}"
+export PATH="${HERE}/usr/bin:${PATH}"
+export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+
+# Run the benchmark
+cd "${HERE}"
+exec python3 "${HERE}/usr/bin/benchmark_runner.py" "$@"
