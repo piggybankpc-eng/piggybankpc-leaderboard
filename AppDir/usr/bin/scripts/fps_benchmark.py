@@ -253,9 +253,57 @@ class FPSBenchmark:
             )
 
             print("✓ Heaven launched! Waiting for you to finish...\n")
+            print("📊 Collecting thermal data in background...\n")
+
+            # Monitor thermal data while Heaven is running
+            gpu_temps = []
+            gpu_utils = []
+            cpu_temps = []
+            cpu_utils = []
+
+            import threading
+            import time as time_module
+            monitor_running = threading.Event()
+            monitor_running.set()
+
+            def monitor_thermals():
+                """Background thread to monitor temps while user runs Heaven"""
+                while monitor_running.is_set():
+                    if self.hardware_detector:
+                        # Get GPU stats
+                        gpu_stats = self.hardware_detector.get_current_gpu_stats()
+                        if 'temperature' in gpu_stats:
+                            gpu_temps.append(gpu_stats['temperature'])
+                        if 'gpu_utilization' in gpu_stats:
+                            util_str = gpu_stats['gpu_utilization'].replace('%', '').strip()
+                            try:
+                                gpu_utils.append(float(util_str))
+                            except ValueError:
+                                pass
+
+                        # Get CPU stats
+                        cpu_stats = self.hardware_detector.get_current_cpu_stats()
+                        if 'temperature' in cpu_stats:
+                            cpu_temps.append(cpu_stats['temperature'])
+                        if 'cpu_utilization' in cpu_stats:
+                            cpu_util_str = cpu_stats['cpu_utilization'].replace('%', '').strip()
+                            try:
+                                cpu_utils.append(float(cpu_util_str))
+                            except ValueError:
+                                pass
+
+                    time_module.sleep(5)  # Sample every 5 seconds
+
+            # Start monitoring thread
+            monitor_thread = threading.Thread(target=monitor_thermals, daemon=True)
+            monitor_thread.start()
 
             # Wait for process to exit
             process.wait()
+
+            # Stop monitoring
+            monitor_running.clear()
+            monitor_thread.join(timeout=1)
 
             print("\n✓ Heaven closed! Looking for results...\n")
 
@@ -268,9 +316,34 @@ class FPSBenchmark:
                 print("⚠ No result file found. Did you click 'Benchmark' before closing?")
                 return {"status": "error", "error": "No results file"}
 
+            # Prepare thermal metrics
+            thermal_metrics = {}
+            if gpu_temps:
+                thermal_metrics["gpu_temp_min"] = min(gpu_temps)
+                thermal_metrics["gpu_temp_avg"] = round(sum(gpu_temps) / len(gpu_temps), 1)
+                thermal_metrics["gpu_temp_max"] = max(gpu_temps)
+            if gpu_utils:
+                thermal_metrics["gpu_util_min"] = round(min(gpu_utils), 1)
+                thermal_metrics["gpu_util_avg"] = round(sum(gpu_utils) / len(gpu_utils), 1)
+                thermal_metrics["gpu_util_max"] = round(max(gpu_utils), 1)
+            if cpu_temps:
+                thermal_metrics["cpu_temp_min"] = min(cpu_temps)
+                thermal_metrics["cpu_temp_avg"] = round(sum(cpu_temps) / len(cpu_temps), 1)
+                thermal_metrics["cpu_temp_max"] = max(cpu_temps)
+            if cpu_utils:
+                thermal_metrics["cpu_util_min"] = round(min(cpu_utils), 1)
+                thermal_metrics["cpu_util_avg"] = round(sum(cpu_utils) / len(cpu_utils), 1)
+                thermal_metrics["cpu_util_max"] = round(max(cpu_utils), 1)
+
             # Parse the newest file
             result_file = max(new_files, key=lambda f: Path(f).stat().st_mtime)
-            return self._parse_heaven_html(result_file)
+            result = self._parse_heaven_html(result_file)
+
+            # Add thermal metrics to result
+            if result.get('status') == 'completed':
+                result['thermal_metrics'] = thermal_metrics
+
+            return result
 
         except Exception as e:
             self.logger.error(f"Heaven interactive failed: {e}")
