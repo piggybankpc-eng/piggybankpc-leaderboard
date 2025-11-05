@@ -9,6 +9,7 @@ from security import BenchmarkSecurity
 from utils.diagnostics import analyze_submission, get_submission_rank
 from utils.improvements import track_improvement, detect_fixes_from_diagnostics, detect_improvement_opportunity
 from utils.achievements import check_and_award_achievements
+from utils.categories import validate_submission_category
 import os
 from pathlib import Path
 
@@ -187,6 +188,16 @@ def submit():
 
             if not submission_data:
                 flash('Failed to extract benchmark data from submission.', 'danger')
+                return redirect(request.url)
+
+            # Validate category (resolution/quality combination)
+            category_error = validate_submission_category(
+                submission_data.get('fps_resolution'),
+                submission_data.get('fps_quality')
+            )
+            if category_error:
+                flash(f'Invalid benchmark settings. {category_error}', 'danger')
+                current_app.logger.warning(f"Category validation failed: {category_error}")
                 return redirect(request.url)
 
             # Save file to uploads directory

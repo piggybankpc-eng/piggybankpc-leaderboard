@@ -58,6 +58,20 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="GET" action="{{ url_for('leaderboard.index') }}" class="row g-3">
+            <!-- Category Filter -->
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select">
+                    <option value="all" {% if category == 'all' %}selected{% endif %}>All Categories</option>
+                    {% for cat in all_categories %}
+                        {% set cat_value = cat.resolution + '_' + cat.quality %}
+                        <option value="{{ cat_value }}" {% if category == cat_value %}selected{% endif %}>
+                            {{ cat.name }}{% if cat.is_official %} ⭐{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <!-- Sort By -->
             <div class="col-md-3">
                 <label class="form-label">Sort By</label>
@@ -285,7 +299,7 @@
 <nav aria-label="Leaderboard pagination">
     <ul class="pagination justify-content-center">
         <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('leaderboard.index', page=pagination.prev_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period) }}">
+            <a class="page-link" href="{{ url_for('leaderboard.index', page=pagination.prev_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period, category=category) }}">
                 Previous
             </a>
         </li>
@@ -293,7 +307,7 @@
         {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
             {% if page_num %}
                 <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('leaderboard.index', page=page_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period) }}">
+                    <a class="page-link" href="{{ url_for('leaderboard.index', page=page_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period, category=category) }}">
                         {{ page_num }}
                     </a>
                 </li>
@@ -303,7 +317,7 @@
         {% endfor %}
 
         <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-            <a class="page-link" href="{{ url_for('leaderboard.index', page=pagination.next_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period) }}">
+            <a class="page-link" href="{{ url_for('leaderboard.index', page=pagination.next_num, sort=sort_by, order=order, price=price_filter, gpu_brand=gpu_brand, time=time_period, category=category) }}">
                 Next
             </a>
         </li>
