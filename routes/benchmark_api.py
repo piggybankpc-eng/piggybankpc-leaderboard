@@ -44,14 +44,31 @@ class BenchmarkRunner:
             self.status = 'running'
             self.add_log(f'Starting {self.type} benchmark...', 'info')
 
-            # Determine which benchmark to run
+            # Search for AppImage in multiple locations
             home_dir = Path.home()
-            appimage_path = home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage"
+            search_locations = [
+                home_dir / "Desktop" / "PiggyBankPC-Benchmark.AppImage",
+                home_dir / "Downloads" / "PiggyBankPC-Benchmark.AppImage",
+                home_dir / "PiggyBankPC-Benchmark.AppImage",
+                Path("/home/john/Desktop/benchmark-suite/PiggyBankPC-Benchmark.AppImage"),
+                Path("/storage/data/media/PiggyBankPC-Benchmark-FINAL.AppImage"),
+            ]
 
-            if not appimage_path.exists():
-                self.error = "AppImage not found"
+            appimage_path = None
+            for location in search_locations:
+                if location.exists():
+                    appimage_path = location
+                    self.add_log(f'Found AppImage at: {location}', 'success')
+                    break
+
+            if not appimage_path:
+                self.error = "AppImage not found in any location"
                 self.status = 'error'
-                self.add_log(f'Error: {self.error}', 'error')
+                self.add_log('ERROR: AppImage not found', 'error')
+                self.add_log('Searched locations:', 'error')
+                for loc in search_locations:
+                    self.add_log(f'  - {loc}', 'error')
+                self.add_log('Please download the AppImage first or place it in ~/Desktop/', 'error')
                 return
 
             # Run benchmark based on type
