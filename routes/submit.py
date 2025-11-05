@@ -112,11 +112,43 @@ def extract_submission_data(validated_results):
                     data['fps_max'] = best_config.get('max_fps', 0.0)
                     data['fps_resolution'] = best_config.get('resolution', '')
                     data['fps_quality'] = best_config.get('quality', '')
+
+                    # Extract thermal metrics from this configuration
+                    thermal_metrics = best_config.get('thermal_metrics', {})
+                    if thermal_metrics:
+                        data['gpu_temp_min'] = thermal_metrics.get('gpu_temp_min')
+                        data['gpu_temp_avg'] = thermal_metrics.get('gpu_temp_avg')
+                        data['gpu_temp_max'] = thermal_metrics.get('gpu_temp_max')
+                        data['gpu_util_min'] = thermal_metrics.get('gpu_util_min')
+                        data['gpu_util_avg'] = thermal_metrics.get('gpu_util_avg')
+                        data['gpu_util_max'] = thermal_metrics.get('gpu_util_max')
+                        data['cpu_temp_min'] = thermal_metrics.get('cpu_temp_min')
+                        data['cpu_temp_avg'] = thermal_metrics.get('cpu_temp_avg')
+                        data['cpu_temp_max'] = thermal_metrics.get('cpu_temp_max')
+                        data['cpu_util_min'] = thermal_metrics.get('cpu_util_min')
+                        data['cpu_util_avg'] = thermal_metrics.get('cpu_util_avg')
+                        data['cpu_util_max'] = thermal_metrics.get('cpu_util_max')
             else:
                 # Fallback to old format
                 data['fps_avg'] = fps_data.get('average_fps', 0.0)
                 data['fps_min'] = fps_data.get('min_fps', 0.0)
                 data['fps_max'] = fps_data.get('max_fps', 0.0)
+
+                # Extract thermal metrics from old format
+                thermal_metrics = fps_data.get('thermal_metrics', {})
+                if thermal_metrics:
+                    data['gpu_temp_min'] = thermal_metrics.get('gpu_temp_min')
+                    data['gpu_temp_avg'] = thermal_metrics.get('gpu_temp_avg')
+                    data['gpu_temp_max'] = thermal_metrics.get('gpu_temp_max')
+                    data['gpu_util_min'] = thermal_metrics.get('gpu_util_min')
+                    data['gpu_util_avg'] = thermal_metrics.get('gpu_util_avg')
+                    data['gpu_util_max'] = thermal_metrics.get('gpu_util_max')
+                    data['cpu_temp_min'] = thermal_metrics.get('cpu_temp_min')
+                    data['cpu_temp_avg'] = thermal_metrics.get('cpu_temp_avg')
+                    data['cpu_temp_max'] = thermal_metrics.get('cpu_temp_max')
+                    data['cpu_util_min'] = thermal_metrics.get('cpu_util_min')
+                    data['cpu_util_avg'] = thermal_metrics.get('cpu_util_avg')
+                    data['cpu_util_max'] = thermal_metrics.get('cpu_util_max')
 
         # Phase 2: Extract GPU metrics for diagnostic analysis
         gpu_metrics = fps_data.get('gpu_metrics', {})

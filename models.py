@@ -94,6 +94,18 @@ class Submission(db.Model):
     gpu_temp_avg = db.Column(db.Float)
     gpu_load_avg = db.Column(db.Float)  # Average GPU utilization %
 
+    # Thermal Metrics (comprehensive monitoring during benchmarks)
+    gpu_temp_min = db.Column(db.Float)
+    gpu_util_min = db.Column(db.Float)
+    gpu_util_avg = db.Column(db.Float)
+    gpu_util_max = db.Column(db.Float)
+    cpu_temp_min = db.Column(db.Float)
+    cpu_temp_avg = db.Column(db.Float)
+    cpu_temp_max = db.Column(db.Float)
+    cpu_util_min = db.Column(db.Float)
+    cpu_util_avg = db.Column(db.Float)
+    cpu_util_max = db.Column(db.Float)
+
     # Improvement Tracking (Phase 2)
     parent_submission_id = db.Column(db.Integer, db.ForeignKey('submissions.id'), nullable=True)
     is_improvement = db.Column(db.Boolean, default=False)
