@@ -86,8 +86,12 @@ else
 fi
 
 # Check for Unigine Heaven (optional)
-if [ -d "$HOME/Unigine_Heaven-4.0" ]; then
-    echo "[x] Unigine Heaven: Found at $HOME/Unigine_Heaven-4.0"
+if [ -d "$HOME/Unigine_Heaven-4.0" ] || [ -d "$HOME/Desktop/Unigine_Heaven-4.0" ]; then
+    if [ -d "$HOME/Unigine_Heaven-4.0" ]; then
+        echo "[x] Unigine Heaven: Found at $HOME/Unigine_Heaven-4.0"
+    else
+        echo "[x] Unigine Heaven: Found at $HOME/Desktop/Unigine_Heaven-4.0"
+    fi
     HAS_HEAVEN=1
 else
     echo "[ ] Unigine Heaven: Not found"
