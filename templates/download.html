@@ -17,18 +17,35 @@
             </div>
 
             <!-- NEW: Web-Based Benchmark Control -->
-            <div class="alert alert-primary alert-dismissible fade show shadow-lg mb-4" role="alert">
-                <h4 class="alert-heading"><i class="bi bi-rocket-takeoff"></i> NEW: Run Benchmarks from Your Browser!</h4>
-                <p class="mb-3">
-                    No download needed! Use our new web-based control panel to run benchmarks directly from your browser with real-time progress tracking.
-                </p>
-                <hr>
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('benchmark_api.benchmark_control_page') }}" class="btn btn-success btn-lg">
-                        <i class="bi bi-play-circle"></i> Launch Web Benchmark Control Panel
-                    </a>
+            <div class="card shadow-lg mb-4 border-success" style="border-width: 3px;">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-rocket-takeoff"></i> 🚀 NEW: Web-Based Benchmark Control
+                    </h3>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="card-body">
+                    <h5>Run Benchmarks Directly from Your Browser!</h5>
+                    <p class="mb-3">
+                        ✨ No download needed! Use our new web-based control panel to run benchmarks directly from your browser with:
+                    </p>
+                    <ul class="mb-3">
+                        <li>🎯 Real-time progress tracking</li>
+                        <li>📊 Live log output</li>
+                        <li>🎮 One-click benchmark execution</li>
+                        <li>⬇️ Instant result downloads</li>
+                    </ul>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('benchmark_api.benchmark_control_page') }}" class="btn btn-success btn-lg">
+                            <i class="bi bi-play-circle"></i> Launch Web Benchmark Control Panel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mb-3">
+                <p class="text-muted">
+                    <strong>OR</strong> download the AppImage for offline use:
+                </p>
             </div>
 
             <!-- Download Card -->
