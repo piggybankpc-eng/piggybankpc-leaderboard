@@ -1,8 +1,13 @@
 #!/bin/bash
 # AppRun script for PiggyBankPC Benchmark
 
-# Get directory without using readlink (which may not be available)
-HERE="$(cd "$(dirname "$0")" && pwd)"
+# Get directory using pure bash parameter expansion (no external commands)
+HERE="${0%/*}"
+[[ "$HERE" = "$0" ]] && HERE="$PWD"
+
+# Make sure we have absolute path
+cd "$HERE"
+HERE="$PWD"
 
 # Set up Python path
 export PYTHONPATH="${HERE}/usr/lib/python3/dist-packages:${HERE}/usr/lib:${PYTHONPATH}"
@@ -10,5 +15,4 @@ export PATH="${HERE}/usr/bin:${PATH}"
 export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
 
 # Run the benchmark
-cd "${HERE}"
 exec python3 "${HERE}/usr/bin/benchmark_runner.py" "$@"
