@@ -1,0 +1,13 @@
+# GPU Price Configuration File
+# Format: GPU_MODEL = £PRICE
+# Add one GPU per line - prices will be used for price-per-performance calculations
+
+GTX 1060 6GB = £68
+GTX 1070 = £89
+GTX 1070 Ti = £120
+GTX 1080 Ti = £250
+RTX 2080 Ti = £187
+RTX 3060 12GB = £230
+RTX 3090 = £600
+Quadro K1200 4GB = £25
+Radeon Pro WX 5100 8GB = £47

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=PiggyBankPC Benchmark
+Comment=GPU Performance Benchmark Suite
+Exec=piggybankpc-benchmark
+Icon=piggybankpc-benchmark
+Categories=Utility;
+Terminal=true
