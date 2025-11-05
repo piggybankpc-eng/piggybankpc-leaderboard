@@ -37,18 +37,21 @@
                     </ul>
 
                     <div class="alert alert-dark mb-3">
-                        <strong>💻 Linux Command:</strong>
+                        <strong>💻 Linux Installation Command:</strong>
                         <div class="input-group mt-2">
                             <input type="text" class="form-control font-monospace"
-                                   value="curl -sL piggybankpc.uk/static/run-piggybankpc.sh | bash"
+                                   value="curl -sL piggybankpc.uk/static/install-piggybankpc.sh | bash"
                                    id="linux-command" readonly>
                             <button class="btn btn-outline-light" type="button" onclick="copyCommand('linux-command')">
                                 <i class="bi bi-clipboard"></i> Copy
                             </button>
                         </div>
-                        <small class="text-muted d-block mt-2">Or download and run manually:</small>
-                        <a href="{{ url_for('static', filename='piggybankpc-client.py') }}" class="btn btn-sm btn-outline-light mt-2">
-                            <i class="bi bi-download"></i> Download Client Agent
+                        <small class="text-muted d-block mt-2">
+                            <i class="bi bi-info-circle"></i> This will check dependencies and ask for sudo if needed to install missing packages.
+                        </small>
+                        <small class="text-muted d-block mt-1">Or download and run manually:</small>
+                        <a href="{{ url_for('static', filename='install-piggybankpc.sh') }}" class="btn btn-sm btn-outline-light mt-2">
+                            <i class="bi bi-download"></i> Download Installer Script
                         </a>
                     </div>
 

@@ -1,0 +1,237 @@
+#!/bin/bash
+# PiggyBankPC Benchmark Installer
+# Installs dependencies and downloads benchmark suite
+
+set -e  # Exit on error
+
+echo "============================================"
+echo "PiggyBankPC Benchmark Installer"
+echo "============================================"
+echo ""
+
+# Check if running as root
+if [ "$EUID" -eq 0 ]; then
+    echo "ERROR: Please do not run this script as root"
+    echo "We will ask for sudo password when needed"
+    exit 1
+fi
+
+# Detect OS
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID
+else
+    echo "ERROR: Cannot detect operating system"
+    exit 1
+fi
+
+echo "Detected OS: $OS"
+echo ""
+
+# Step 1: Check system hardware
+echo "=== Step 1: Checking System Hardware ==="
+echo ""
+
+# Check CPU
+if command -v lscpu >/dev/null 2>&1; then
+    CPU_MODEL=$(lscpu | grep "Model name:" | cut -d: -f2 | xargs)
+    echo "CPU: $CPU_MODEL"
+else
+    echo "WARNING: lscpu not found, cannot detect CPU"
+    CPU_MODEL="Unknown"
+fi
+
+# Check GPU
+if command -v nvidia-smi >/dev/null 2>&1; then
+    GPU_MODEL=$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null || echo "Unknown")
+    echo "GPU: $GPU_MODEL"
+else
+    echo "WARNING: nvidia-smi not found"
+    echo "INFO: This is needed for NVIDIA GPU detection"
+    GPU_MODEL="Unknown"
+fi
+
+# Check RAM
+if command -v free >/dev/null 2>&1; then
+    RAM_TOTAL=$(free -h | grep Mem: | awk '{print $2}')
+    echo "RAM: $RAM_TOTAL"
+else
+    echo "WARNING: free command not found"
+    RAM_TOTAL="Unknown"
+fi
+
+echo ""
+
+# Step 2: Check dependencies
+echo "=== Step 2: Checking Dependencies ==="
+echo ""
+
+MISSING_DEPS=""
+
+# Check for Python 3
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "[ ] Python 3: NOT FOUND (REQUIRED)"
+    MISSING_DEPS="$MISSING_DEPS python3"
+else
+    PYTHON_VERSION=$(python3 --version)
+    echo "[x] Python 3: $PYTHON_VERSION"
+fi
+
+# Check for curl
+if ! command -v curl >/dev/null 2>&1; then
+    echo "[ ] curl: NOT FOUND (REQUIRED)"
+    MISSING_DEPS="$MISSING_DEPS curl"
+else
+    echo "[x] curl: Found"
+fi
+
+# Check for Unigine Heaven (optional)
+if [ -d "$HOME/Unigine_Heaven-4.0" ]; then
+    echo "[x] Unigine Heaven: Found at $HOME/Unigine_Heaven-4.0"
+    HAS_HEAVEN=1
+else
+    echo "[ ] Unigine Heaven: Not found (optional, will use fallback benchmark)"
+    HAS_HEAVEN=0
+fi
+
+# Check for Ollama (optional)
+if command -v ollama >/dev/null 2>&1; then
+    echo "[x] Ollama: Found (for AI benchmarks)"
+else
+    echo "[ ] Ollama: Not found (optional, AI benchmark will be skipped)"
+fi
+
+# Check for sysbench (optional)
+if command -v sysbench >/dev/null 2>&1; then
+    echo "[x] Sysbench: Found (for CPU benchmarks)"
+else
+    echo "[ ] Sysbench: Not found (optional, CPU benchmark will be skipped)"
+fi
+
+echo ""
+
+# Step 3: Install missing required dependencies
+if [ -n "$MISSING_DEPS" ]; then
+    echo "=== Step 3: Installing Required Dependencies ==="
+    echo ""
+    echo "Missing: $MISSING_DEPS"
+    echo ""
+    read -p "Install missing dependencies? (y/n): " -n 1 -r
+    echo ""
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [ "$OS" = "ubuntu" ] || [ "$OS" = "debian" ]; then
+            echo "Running: sudo apt update && sudo apt install -y $MISSING_DEPS"
+            sudo apt update && sudo apt install -y $MISSING_DEPS
+        elif [ "$OS" = "fedora" ]; then
+            echo "Running: sudo dnf install -y $MISSING_DEPS"
+            sudo dnf install -y $MISSING_DEPS
+        elif [ "$OS" = "arch" ]; then
+            echo "Running: sudo pacman -S --noconfirm $MISSING_DEPS"
+            sudo pacman -S --noconfirm $MISSING_DEPS
+        else
+            echo "ERROR: Unsupported OS for automatic installation"
+            echo "Please install manually: $MISSING_DEPS"
+            exit 1
+        fi
+        echo ""
+        echo "Dependencies installed!"
+    else
+        echo "Skipping dependency installation"
+        echo "WARNING: Benchmark may not work without required dependencies"
+    fi
+else
+    echo "=== Step 3: All Required Dependencies Present ==="
+fi
+
+echo ""
+
+# Step 4: Download benchmark AppImage
+echo "=== Step 4: Downloading Benchmark AppImage ==="
+echo ""
+
+DOWNLOAD_DIR="$HOME/Desktop"
+mkdir -p "$DOWNLOAD_DIR"
+
+APPIMAGE_PATH="$DOWNLOAD_DIR/PiggyBankPC-Benchmark.AppImage"
+
+if [ -f "$APPIMAGE_PATH" ]; then
+    echo "AppImage already exists at: $APPIMAGE_PATH"
+    read -p "Re-download? (y/n): " -n 1 -r
+    echo ""
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Using existing AppImage"
+    else
+        echo "Downloading from GitHub..."
+        curl -L "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage" \
+             -o "$APPIMAGE_PATH"
+        chmod +x "$APPIMAGE_PATH"
+        echo "Downloaded to: $APPIMAGE_PATH"
+    fi
+else
+    echo "Downloading from GitHub..."
+    curl -L "https://github.com/piggybankpc-eng/piggybankpc-leaderboard/raw/main/PiggyBankPC-Benchmark.AppImage" \
+         -o "$APPIMAGE_PATH"
+    chmod +x "$APPIMAGE_PATH"
+    echo "Downloaded to: $APPIMAGE_PATH"
+fi
+
+echo ""
+
+# Step 5: Ask for GPU price
+echo "=== Step 5: GPU Price Information ==="
+echo ""
+echo "Detected GPU: $GPU_MODEL"
+read -p "How much did your GPU cost? (in GBP): " GPU_PRICE
+
+# Save to config
+mkdir -p "$HOME/PiggyBankPC/config"
+echo "$GPU_MODEL = £$GPU_PRICE" >> "$HOME/PiggyBankPC/config/gpu-prices.txt"
+echo "Price saved!"
+echo ""
+
+# Step 6: Ready to run
+echo "============================================"
+echo "Installation Complete!"
+echo "============================================"
+echo ""
+echo "Your system:"
+echo "  CPU: $CPU_MODEL"
+echo "  GPU: $GPU_MODEL (£$GPU_PRICE)"
+echo "  RAM: $RAM_TOTAL"
+echo ""
+echo "AppImage location:"
+echo "  $APPIMAGE_PATH"
+echo ""
+echo "To run benchmark:"
+echo "  $APPIMAGE_PATH --quick       (Quick FPS test, ~15 min)"
+echo "  $APPIMAGE_PATH --full        (Full suite, ~90 min)"
+echo ""
+echo "Or run interactively:"
+echo "  $APPIMAGE_PATH"
+echo ""
+read -p "Run quick benchmark now? (y/n): " -n 1 -r
+echo ""
+
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo ""
+    echo "Starting quick benchmark..."
+    echo ""
+    "$APPIMAGE_PATH" --quick --no-deps-check
+
+    echo ""
+    echo "Benchmark complete!"
+    echo "Results saved to: $HOME/PiggyBankPC/results/"
+    echo ""
+    echo "Next steps:"
+    echo "1. Go to https://piggybankpc.uk/submit"
+    echo "2. Upload the .pbr file from results folder"
+    echo "3. View your score on the leaderboard!"
+else
+    echo ""
+    echo "You can run the benchmark anytime by running:"
+    echo "  $APPIMAGE_PATH"
+fi
+
+echo ""
+echo "Thank you for using PiggyBankPC!"
