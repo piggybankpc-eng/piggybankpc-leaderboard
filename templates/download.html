@@ -37,19 +37,22 @@
                     </ul>
 
                     <div class="alert alert-dark mb-3">
-                        <strong>💻 Linux Installation Command:</strong>
-                        <div class="input-group mt-2">
-                            <input type="text" class="form-control font-monospace"
-                                   value="curl -sL piggybankpc.uk/static/install-piggybankpc.sh | bash"
-                                   id="linux-command" readonly>
-                            <button class="btn btn-outline-light" type="button" onclick="copyCommand('linux-command')">
+                        <strong>💻 Linux Installation Commands:</strong>
+                        <div class="bg-black text-white p-3 rounded mt-2 font-monospace" style="position: relative;">
+                            <button class="btn btn-sm btn-outline-light position-absolute top-0 end-0 m-2"
+                                    type="button"
+                                    onclick="copyCommand('linux-commands')"
+                                    style="z-index: 10;">
                                 <i class="bi bi-clipboard"></i> Copy
                             </button>
+                            <pre class="text-white mb-0" id="linux-commands" style="user-select: all;">curl -sL piggybankpc.uk/static/install-piggybankpc.sh -o install.sh
+chmod +x install.sh
+./install.sh</pre>
                         </div>
                         <small class="text-muted d-block mt-2">
-                            <i class="bi bi-info-circle"></i> This will check dependencies and ask for sudo if needed to install missing packages.
+                            <i class="bi bi-info-circle"></i> Downloads the installer, makes it executable, and runs it with interactive prompts for dependency installation.
                         </small>
-                        <small class="text-muted d-block mt-1">Or download and run manually:</small>
+                        <small class="text-muted d-block mt-1">Or download manually:</small>
                         <a href="{{ url_for('static', filename='install-piggybankpc.sh') }}" class="btn btn-sm btn-outline-light mt-2">
                             <i class="bi bi-download"></i> Download Installer Script
                         </a>
@@ -70,13 +73,16 @@
 
             <script>
             function copyCommand(elementId) {
-                var copyText = document.getElementById(elementId);
-                copyText.select();
-                copyText.setSelectionRange(0, 99999);
-                navigator.clipboard.writeText(copyText.value);
+                var element = document.getElementById(elementId);
+                var textToCopy = element.textContent || element.value;
+
+                navigator.clipboard.writeText(textToCopy);
 
                 // Visual feedback
                 var btn = event.target;
+                if (!btn.classList.contains('btn')) {
+                    btn = btn.closest('button');
+                }
                 var originalText = btn.innerHTML;
                 btn.innerHTML = '<i class="bi bi-check"></i> Copied!';
                 setTimeout(function() {
