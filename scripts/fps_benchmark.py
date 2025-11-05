@@ -39,7 +39,7 @@ class FPSBenchmark:
             Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path.home() / ".local/share/unigine/heaven",
             Path("/opt/unigine/heaven"),
-            Path("/usr/share/unigine/heaven"
+            Path("/usr/share/unigine/heaven")
         ]
 
         for path in possible_paths:
@@ -576,7 +576,7 @@ class FPSBenchmark:
             Path.home() / "Unigine_Heaven-4.0",
             Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path.home() / ".local/share/unigine/heaven",
-            Path("/opt/unigine/heaven"
+            Path("/opt/unigine/heaven")
         ]
 
         heaven_bin = None
