@@ -316,18 +316,28 @@ Radeon Pro WX 5100 8GB = £47
 
         # Manual input
         print(f"\nGPU detected: {gpu_model}")
-        print("Please enter the price you paid for this GPU:")
+        print("Please enter the price you paid for this GPU (or press Ctrl+C to skip):")
 
         while True:
             try:
                 price_input = input("Price (£): ").strip()
+
+                # Allow empty input to skip
+                if not price_input:
+                    print("Skipping price entry...")
+                    return 0.0
+
                 # Remove £ symbol if present
-                price_input = price_input.replace('£', '')
+                price_input = price_input.replace('£', '').replace(',', '')
                 price = float(price_input)
 
-                if price <= 0:
-                    print("ERROR: Price must be greater than 0")
+                if price < 0:
+                    print("ERROR: Price cannot be negative")
                     continue
+
+                if price == 0:
+                    print("Using £0 as price (no cost)")
+                    return 0.0
 
                 # Ask if user wants to save this price
                 save = input(f"Save {gpu_model} = £{price:.2f} to price list? (y/n): ").strip().lower()
@@ -340,8 +350,11 @@ Radeon Pro WX 5100 8GB = £47
             except ValueError:
                 print("ERROR: Invalid price format. Please enter a number (e.g., 68 or 68.50)")
             except KeyboardInterrupt:
-                print("\n\nOperation cancelled by user")
-                return None
+                print("\n\nOperation cancelled by user - using £0 as price")
+                return 0.0
+            except EOFError:
+                print("\n\nNo input detected - using £0 as price")
+                return 0.0
 
 
 if __name__ == "__main__":

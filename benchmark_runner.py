@@ -106,13 +106,26 @@ class BenchmarkSuite:
         
         # Check GPU price (interactive - prompts if not found)
         gpu_model = gpu_info.get('model', 'Unknown')
-        price = self.price_manager.get_price_interactive(gpu_model)
-        
+        price = None
+
+        # Only prompt for price if GPU was successfully detected
+        if gpu_info.get('detected', False) and gpu_model != 'Unknown':
+            try:
+                price = self.price_manager.get_price_interactive(gpu_model)
+            except Exception as e:
+                self.logger.error(f"Error getting GPU price: {str(e)}")
+                print(f"\n⚠ Error getting GPU price: {str(e)}")
+                print("  Continuing without price data...")
+                price = None
+        else:
+            print(f"\n⚠ GPU not detected or unknown")
+            print("  Continuing without price data...")
+
         return {
             'cpu': cpu_info,
             'gpu': gpu_info,
             'ram': ram_info,
-            'gpu_price': price
+            'gpu_price': price if price else 0.0
         }
     
     def run_quick_benchmark(self):
