@@ -104,15 +104,9 @@ class BenchmarkSuite:
         for key, value in ram_info.items():
             print(f"  {key}: {value}")
         
-        # Check GPU price
+        # Check GPU price (interactive - prompts if not found)
         gpu_model = gpu_info.get('model', 'Unknown')
-        price = self.price_manager.get_price(gpu_model)
-        
-        if price:
-            print(f"\n✓ GPU PRICE FOUND: £{price}")
-        else:
-            print(f"\n⚠ GPU PRICE NOT FOUND: {gpu_model}")
-            print("  Use Menu Option 5 to add this GPU")
+        price = self.price_manager.get_price_interactive(gpu_model)
         
         return {
             'cpu': cpu_info,
