@@ -35,10 +35,11 @@ class FPSBenchmark:
         """
         # Check common installation paths
         possible_paths = [
+            Path.home() / "Unigine_Heaven-4.0",
+            Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path.home() / ".local/share/unigine/heaven",
             Path("/opt/unigine/heaven"),
-            Path("/usr/share/unigine/heaven"),
-            Path.home() / "Unigine_Heaven-4.0"
+            Path("/usr/share/unigine/heaven"
         ]
 
         for path in possible_paths:
@@ -198,6 +199,7 @@ class FPSBenchmark:
         """Find Unigine Heaven binary"""
         heaven_paths = [
             Path.home() / "Unigine_Heaven-4.0",
+            Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path("/opt/unigine/heaven"),
             Path.home() / ".local/share/unigine/heaven",
         ]
@@ -571,9 +573,10 @@ class FPSBenchmark:
 
         # Find Unigine Heaven installation
         heaven_paths = [
+            Path.home() / "Unigine_Heaven-4.0",
+            Path.home() / "Desktop" / "Unigine_Heaven-4.0",
             Path.home() / ".local/share/unigine/heaven",
-            Path("/opt/unigine/heaven"),
-            Path.home() / "Unigine_Heaven-4.0"
+            Path("/opt/unigine/heaven"
         ]
 
         heaven_bin = None
