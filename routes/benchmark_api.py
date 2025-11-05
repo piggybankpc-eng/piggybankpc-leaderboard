@@ -349,12 +349,6 @@ class BenchmarkRunner:
         self.add_log('Benchmark stopped by user', 'info')
 
 
-@benchmark_api_bp.route('/benchmark-control')
-def benchmark_control_page():
-    """Render benchmark control page"""
-    return render_template('benchmark_control.html')
-
-
 @benchmark_api_bp.route('/api/benchmark/system-info')
 def get_system_info():
     """Get system information - uses pre-detected hardware from session"""
